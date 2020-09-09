@@ -62,7 +62,7 @@ class ASTPrintVisitor : public IASTNodeVisitor {
   }
 };
 
-class ProgramEmitter : public IASTNodeVisitor {
+class StartearVMInstructionEmitter : public IASTNodeVisitor {
  public:
   void visit(ASTNode& node) override { node.self(program_); }
 

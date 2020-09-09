@@ -196,7 +196,7 @@ class EmitterTest : public testing::Test {
     result->accept(emitter_);
   }
 
-  ProgramEmitter emitter_;
+  StartearVMInstructionEmitter emitter_;
 };
 
 TEST_F(EmitterTest, BasicTest) {
@@ -277,7 +277,7 @@ fn main() {
   auto ast = p.parse();
   ASTPrintVisitor v;
   ast->accept(v);
-  ProgramEmitter emitter;
+  StartearVMInstructionEmitter emitter;
   ast->accept(emitter);
   auto program = emitter.emit();
   VMImpl vm(program);
