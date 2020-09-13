@@ -34,10 +34,6 @@ enum class OPCode : size_t {
   // OP_PRINT 1.0
   // OP_PRINT "sample"
   OP_PRINT,
-  // Print a operand which indicates a variable name
-  // e.g.
-  // OP_PRINT_VARIABLE "n"
-  OP_PRINT_VARIABLE,
   // Push a operand to the top of stack.
   // e.g.
   // OP_PUSH 3.0
@@ -51,8 +47,8 @@ enum class OPCode : size_t {
   OP_STORE_LOCAL,
   // Look up specified variable and push top of stack.
   // e.g.
-  // OP_GET_LOCAL "n"
-  OP_GET_LOCAL,
+  // OP_LOAD_LOCAL "n"
+  OP_LOAD_LOCAL,
   // Call function.
   // e.g.
   // OP_CALL "sub"
@@ -60,22 +56,22 @@ enum class OPCode : size_t {
   // Create frame. frame is defined as the unit of scope.
   // In general, first operand is used to specify return point.
   // e.g.
-  // OP_PUSH_MAIN_FRAME
   //
   // 32 | OP_RETURN # pop frame. If there is returning value.
   //                # VM will drain top value of current stack,
   //                # and push it into the stack on previous frame.
   //                # It will recover program counter from current frame.
   //
-  // 41 | OP_PUSH_FRAME 44   # second operand is only program counter.
+  // 41 | OP_PUSH_FRAME
   // 42 | OP_PUSH 32         # first argument
-  // 43 | OP_CALL "sub"      # function call
+  // 43 | OP_CALL "sub"      # function call. It will set next pointer to return
+  // back.
   // 44 | OP_STORE_LOCAL "n" # Store returned value from function "sub"
   //
   // Note that only to use this instruction without operands will be treated as
   // startup function like "main".
-  OP_PUSH_MAIN_FRAME,
   OP_PUSH_FRAME,
+  OP_POP_FRAME,
   // Return the stack ptr and program counter. If there is return values
   // , store them to the top of stack. For more detail, it is described on
   // OP_PUSH_FRAME.

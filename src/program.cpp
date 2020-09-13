@@ -3,13 +3,16 @@
 // Copyright (c) Rei Shimizu 2020
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
-//        of this software and associated documentation files (the "Software"), to deal
+//        of this software and associated documentation files (the "Software"),
+//        to deal
 // in the Software without restriction, including without limitation the rights
-//        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-//        copies of the Software, and to permit persons to whom the Software is
+//        to use, copy, modify, merge, publish, distribute, sublicense, and/or
+//        sell copies of the Software, and to permit persons to whom the
+//        Software is
 // furnished to do so, subject to the following conditions:
 //
-// The above copyright notice and this permission notice shall be included in all
+// The above copyright notice and this permission notice shall be included in
+// all
 //        copies or substantial portions of the Software.
 //
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
@@ -91,21 +94,34 @@ void Program::addFunction(std::string name, size_t args) {
   func_metadata_.emplace(std::make_pair(name, metadata));
 }
 
+std::optional<Program::FunctionMetadata> Program::getFunction(
+    std::string name) {
+  auto entry = func_metadata_.find(name);
+  if (entry != func_metadata_.end()) {
+    return entry->second;
+  }
+  return std::nullopt;
+}
+
+void Program::updateIndex(size_t i) {
+  STARTEAR_ASSERT(0 <= i && i < instructions_.size());
+  index_ = i;
+}
+
 bool Program::validOperandSize(OPCode code, size_t operand_size) {
   const auto expect_size = [&operand_size](size_t expected) {
     return operand_size == expected;
   };
   switch (code) {
     case OPCode::OP_PRINT:
-    case OPCode::OP_PRINT_VARIABLE:
     case OPCode::OP_PUSH:
     case OPCode::OP_STORE_LOCAL:
-    case OPCode::OP_GET_LOCAL:
-    case OPCode::OP_PUSH_FRAME:
+    case OPCode::OP_LOAD_LOCAL:
       return expect_size(1);
     case OPCode::OP_ADD:
     case OPCode::OP_RETURN:
-    case OPCode::OP_PUSH_MAIN_FRAME:
+    case OPCode::OP_PUSH_FRAME:
+    case OPCode::OP_POP_FRAME:
       return expect_size(0);
     default:
       return false;
@@ -122,16 +138,17 @@ std::optional<std::pair<OPCode, uint8_t>> Program::consume() {
   uint8_t offset = 0;
 
   switch (opcode) {
+      // With no operand
     case OPCode::OP_ADD:
     case OPCode::OP_RETURN:
-    case OPCode::OP_PUSH_MAIN_FRAME:
+    case OPCode::OP_PUSH_FRAME:
+    case OPCode::OP_POP_FRAME:
       break;
+    // With 1 operand
     case OPCode::OP_PUSH:
     case OPCode::OP_PRINT:
-    case OPCode::OP_PRINT_VARIABLE:
     case OPCode::OP_STORE_LOCAL:
-    case OPCode::OP_GET_LOCAL:
-    case OPCode::OP_PUSH_FRAME:
+    case OPCode::OP_LOAD_LOCAL:
       ++index_;
       offset = 1;
       break;

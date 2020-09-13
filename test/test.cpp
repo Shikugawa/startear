@@ -245,7 +245,7 @@ TEST(VmTest, BasicTest) {
   EXPECT_EQ("44.2\n", testing::internal::GetCapturedStdout());
 
   Program program3;
-  program3.addInst(OPCode::OP_PUSH_MAIN_FRAME);
+  program3.addInst(OPCode::OP_PUSH_FRAME);
   program3.addInst(OPCode::OP_PUSH,
                    {std::make_pair(Value::Category::Literal, 22.0)});
   program3.addInst(OPCode::OP_PUSH,
@@ -254,9 +254,9 @@ TEST(VmTest, BasicTest) {
   program3.addInst(
       OPCode::OP_STORE_LOCAL,
       {std::make_pair(Value::Category::Variable, std::string("r"))});
-  program3.addInst(
-      OPCode::OP_PRINT_VARIABLE,
-      {std::make_pair(Value::Category::Variable, std::string("r"))});
+  //  program3.addInst(
+  //      OPCode::OP_PRINT_VARIABLE,
+  //      {std::make_pair(Value::Category::Variable, std::string("r"))});
   testing::internal::CaptureStdout();
   vm.restart(program3);
   EXPECT_EQ("56\n", testing::internal::GetCapturedStdout());
@@ -287,10 +287,12 @@ fn main() {
 
 TEST(Integration, FuncTest) {
   std::string code = R"(
-fn sub(arg1, arg2) {}
+fn sub(arg1, arg2) {
+    return 3;
+}
 
 fn main() {
-    sub(2, 3);
+    let b = sub(9, 10);
 }
 )";
   Tokenizer t(code);
@@ -298,6 +300,14 @@ fn main() {
   auto ast = p.parse();
   ASTPrintVisitor v;
   ast->accept(v);
+  StartearVMInstructionEmitter emitter;
+  ast->accept(emitter);
+  auto program = emitter.emit();
+  for (auto a : program.instructions()) {
+    std::cout << a << std::endl;
+  }
+  // TODO: Fix broken disassembler
+  disassemble(program);
 }
 
 }  // namespace

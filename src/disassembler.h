@@ -47,18 +47,14 @@ void disassemble(Program& p) {
     switch (instr) {
       case OPCode::OP_ADD:
         instr_str = "OP_ADD";
-      case OPCode::OP_PUSH_MAIN_FRAME:
-        SET_INSTRUCTION("OP_PUSH_MAIN_FRAME");
       case OPCode::OP_RETURN:
         SET_INSTRUCTION("OP_RETURN");
         std::cout << fmt::format("{}", instr_str) << std::endl;
         break;
-      case OPCode::OP_GET_LOCAL:
-        SET_INSTRUCTION("OP_GET_LOCAL");
-      case OPCode::OP_STORE_LOCAL:
+      case OPCode::OP_LOAD_LOCAL:
+        SET_INSTRUCTION("OP_LOAD_LOCAL");
+      case OPCode::OP_STORE_LOCAL: {
         SET_INSTRUCTION("OP_STORE_LOCAL");
-      case OPCode::OP_PRINT_VARIABLE: {
-        SET_INSTRUCTION("OP_PRINT_VARIABLE");
         ++ptr;
         auto operand_ptr = p.instructions()[ptr];
         auto operand_data_entry = p.fetchValue(operand_ptr);

@@ -3,13 +3,16 @@
 // Copyright (c) Rei Shimizu 2020
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
-//        of this software and associated documentation files (the "Software"), to deal
+//        of this software and associated documentation files (the "Software"),
+//        to deal
 // in the Software without restriction, including without limitation the rights
-//        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-//        copies of the Software, and to permit persons to whom the Software is
+//        to use, copy, modify, merge, publish, distribute, sublicense, and/or
+//        sell copies of the Software, and to permit persons to whom the
+//        Software is
 // furnished to do so, subject to the following conditions:
 //
-// The above copyright notice and this permission notice shall be included in all
+// The above copyright notice and this permission notice shall be included in
+// all
 //        copies or substantial portions of the Software.
 //
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
@@ -24,6 +27,7 @@
 #define STARTEAR_ALL_AST_H
 
 #include <queue>
+#include <variant>
 
 #include "program.h"
 #include "tokenizer.h"
@@ -251,10 +255,10 @@ class BasicExpression : public ASTNode {
   EqualityExpressionPtr expr_;
 };
 
-class LetStatement : public ASTNode {
+class FunctionCall : public ASTNode {
  public:
-  LetStatement(NormalPtr token, BasicExpressionPtr expr)
-      : token_(std::move(token)), expr_(std::move(expr)) {}
+  FunctionCall(NormalPtr token, std::vector<BasicExpressionPtr>& statements)
+      : token_(std::move(token)), statements_(std::move(statements)) {}
 
   // ASTNode
   void accept(IASTNodeVisitor& visitor) override;
@@ -262,28 +266,47 @@ class LetStatement : public ASTNode {
   std::string toString() override;
 
  private:
-  BasicExpressionPtr expr_;
+  std::vector<BasicExpressionPtr> statements_;
+  TokenPtr token_;
+};
+
+using FunctionCallPtr = std::unique_ptr<FunctionCall>;
+
+class LetStatement : public ASTNode {
+ public:
+  LetStatement(NormalPtr token, BasicExpressionPtr expr)
+      : token_(std::move(token)), basic_expr_(std::move(expr)) {}
+  LetStatement(NormalPtr token, FunctionCallPtr expr)
+      : token_(std::move(token)), func_call_(std::move(expr)) {}
+
+  // ASTNode
+  void accept(IASTNodeVisitor& visitor) override;
+  void self(Program& program) override;
+  std::string toString() override;
+
+ private:
+  BasicExpressionPtr basic_expr_;
+  FunctionCallPtr func_call_;
   TokenPtr token_;
 };
 
 using LetStatementPtr = std::unique_ptr<LetStatement>;
 
-class FunctionCall : public ASTNode {
-public:
-    FunctionCall(NormalPtr token, std::vector<BasicExpressionPtr>& statements)
-        : token_(std::move(token)), statements_(std::move(statements)) {}
+class ReturnDeclaration : public ASTNode {
+ public:
+  ReturnDeclaration(PrimaryPtr token) : token_(std::move(token)) {}
+  ReturnDeclaration(NormalPtr token) : token_(std::move(token)) {}
 
-    // ASTNode
-    void accept(IASTNodeVisitor& visitor) override;
-    void self(Program& program) override;
-    std::string toString() override;
+  // ASTNode
+  void accept(IASTNodeVisitor& visitor) override;
+  void self(Program& program) override;
+  std::string toString() override;
 
-private:
-    std::vector<BasicExpressionPtr> statements_;
-    TokenPtr token_;
+ private:
+  std::variant<PrimaryPtr, NormalPtr> token_;
 };
 
-using FunctionCallPtr = std::unique_ptr<FunctionCall>;
+using ReturnDeclarationPtr = std::unique_ptr<ReturnDeclaration>;
 
 class FunctionDeclaration : public ASTNode {
  public:

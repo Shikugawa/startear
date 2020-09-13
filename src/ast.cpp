@@ -3,13 +3,16 @@
 // Copyright (c) Rei Shimizu 2020
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
-//        of this software and associated documentation files (the "Software"), to deal
+//        of this software and associated documentation files (the "Software"),
+//        to deal
 // in the Software without restriction, including without limitation the rights
-//        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-//        copies of the Software, and to permit persons to whom the Software is
+//        to use, copy, modify, merge, publish, distribute, sublicense, and/or
+//        sell copies of the Software, and to permit persons to whom the
+//        Software is
 // furnished to do so, subject to the following conditions:
 //
-// The above copyright notice and this permission notice shall be included in all
+// The above copyright notice and this permission notice shall be included in
+// all
 //        copies or substantial portions of the Software.
 //
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
@@ -49,7 +52,7 @@ void PrimaryExpression::self(Program& program) {
                                       std::stod(token_->lexeme()))});
     } else if (token_->type() == TokenType::IDENTIFIER) {
       program.addInst(
-          OPCode::OP_GET_LOCAL,
+          OPCode::OP_LOAD_LOCAL,
           {std::make_pair(Value::Category::Variable, token_->lexeme())});
     } else {
       NOT_REACHED;
@@ -224,13 +227,22 @@ void BasicExpression::self(Program& program) {
 }
 
 std::string LetStatement::toString() {
-  return fmt::format("{} -> {}", token_->lexeme(), expr_->toString());
+  if (basic_expr_ != nullptr) {
+    return fmt::format("{} -> {}", token_->lexeme(), basic_expr_->toString());
+  } else if (func_call_ != nullptr) {
+    return fmt::format("{} -> {}", token_->lexeme(), func_call_->toString());
+  }
+  NOT_REACHED;
 }
 
 void LetStatement::accept(IASTNodeVisitor& visitor) { visitor.visit(*this); }
 
 void LetStatement::self(Program& program) {
-  static_cast<ASTNode*>(expr_.get())->self(program);
+  if (basic_expr_ != nullptr) {
+    static_cast<ASTNode*>(basic_expr_.get())->self(program);
+  } else if (func_call_ != nullptr) {
+    static_cast<ASTNode*>(func_call_.get())->self(program);
+  }
   program.addInst(OPCode::OP_STORE_LOCAL,
                   {std::make_pair(Value::Category::Literal, token_->lexeme())});
 }
@@ -262,15 +274,9 @@ void FunctionDeclaration::accept(IASTNodeVisitor& visitor) {
 }
 
 void FunctionDeclaration::self(Program& program) {
-  // main function is specific because it won't allow argument.
-  // So we can use specialization to reduce instructions.
-  if (name_->lexeme() == "main") {
-    STARTEAR_ASSERT(args_.size() == 0);
-    for (const auto& stmt : statements_) {
-      static_cast<ASTNode*>(stmt.get())->self(program);
-    }
-  } else {
-    Unimplemented();
+  program.addInst(OPCode::OP_PUSH_FRAME);
+  for (const auto& stmt : statements_) {
+    static_cast<ASTNode*>(stmt.get())->self(program);
   }
 }
 
@@ -292,6 +298,31 @@ std::string FunctionDeclaration::toString() {
     }
   }
   return func_name;
+}
+
+void ReturnDeclaration::accept(IASTNodeVisitor& visitor) {
+  visitor.visit(*this);
+}
+
+void ReturnDeclaration::self(Program& program) {
+  if (std::holds_alternative<PrimaryPtr>(token_)) {  // Number
+    program.addInst(OPCode::OP_PUSH,
+                    {std::make_pair(Value::Category::Literal,
+                                    std::get<PrimaryPtr>(token_)->lexeme())});
+  } else if (std::holds_alternative<NormalPtr>(token_)) {  // Identifier
+    program.addInst(OPCode::OP_LOAD_LOCAL,
+                    {std::make_pair(Value::Category::Variable,
+                                    std::get<NormalPtr>(token_)->lexeme())});
+  }
+  program.addInst(OPCode::OP_RETURN);
+}
+
+std::string ReturnDeclaration::toString() {
+  return std::visit(
+      [](auto& token) -> std::string {
+        return fmt::format("return {}", token->lexeme());
+      },
+      token_);
 }
 
 void ProgramDeclaration::accept(IASTNodeVisitor& visitor) {

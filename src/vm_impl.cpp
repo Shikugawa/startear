@@ -46,14 +46,6 @@ void VMImpl::start() {
         }
         break;
       }
-      case OPCode::OP_PRINT_VARIABLE: {
-        STARTEAR_ASSERT(operand_ptrs.size() == 1);
-        auto data_entry = lookupLocalVariableTable(operand_ptrs[0]);
-        if (data_entry) {
-          print(*data_entry);
-        }
-        break;
-      }
       case OPCode::OP_PUSH: {
         STARTEAR_ASSERT(operand_ptrs.size() == 1);
         auto data_entry = program_.fetchValue(operand_ptrs[0]);
@@ -81,7 +73,7 @@ void VMImpl::start() {
         }
         break;
       }
-      case OPCode::OP_GET_LOCAL: {
+      case OPCode::OP_LOAD_LOCAL: {
         STARTEAR_ASSERT(operand_ptrs.size() == 1);
         auto value_entry = lookupLocalVariableTable(operand_ptrs[0]);
         if (value_entry) {
@@ -89,10 +81,6 @@ void VMImpl::start() {
         }
         break;
       }
-      case OPCode::OP_PUSH_MAIN_FRAME:
-        STARTEAR_ASSERT(operand_ptrs.size() == 0);
-        pushFrame();
-        break;
       case OPCode::OP_PUSH_FRAME: {
         STARTEAR_ASSERT(operand_ptrs.size() == 1);
         auto data_entry = program_.fetchValue(operand_ptrs[0]);
@@ -104,10 +92,39 @@ void VMImpl::start() {
         }
         break;
       }
+      case OPCode::OP_RETURN: {
+        auto return_pc = frame_.top().return_pc_;
+        popFrame();
+        pc_ = return_pc;
+        program_.updateIndex(return_pc);
+      }
+      case OPCode::OP_CALL: {
+        STARTEAR_ASSERT(operand_ptrs.size() == 1);
+        auto func_label_entry = program_.fetchValue(operand_ptrs[0]);
+        if (func_label_entry) {
+          STARTEAR_ASSERT(func_label_entry->category() ==
+                          Value::Category::Variable);
+          STARTEAR_ASSERT(func_label_entry->getString());
+          // TODO: This information should be known when code analysis phase
+          auto func_entry =
+              program_.getFunction(*func_label_entry->getString());
+          if (!func_entry.has_value()) {
+            std::cerr << fmt::format("{} is not defined",
+                                     *func_label_entry->getString())
+                      << std::endl;
+            state_ = VMState::TerminatedWithError;
+            return;
+          }
+          frame_.top().return_pc_ = pc_ + 1;
+          pc_ = func_entry->pc_;
+          program_.updateIndex(func_entry->pc_);
+        }
+      }
       default:
         std::cerr << fmt::format("{} is unsupported instruction", opcode)
                   << std::endl;
-        break;
+        state_ = VMState::TerminatedWithError;
+        return;
     }
     instr_entry = program_.fetchInst();
   }
