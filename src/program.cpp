@@ -117,6 +117,7 @@ bool Program::validOperandSize(OPCode code, size_t operand_size) {
     case OPCode::OP_PUSH:
     case OPCode::OP_STORE_LOCAL:
     case OPCode::OP_LOAD_LOCAL:
+    case OPCode::OP_CALL:
       return expect_size(1);
     case OPCode::OP_ADD:
     case OPCode::OP_RETURN:
@@ -144,7 +145,8 @@ std::optional<std::pair<OPCode, uint8_t>> Program::consume() {
     case OPCode::OP_PUSH_FRAME:
     case OPCode::OP_POP_FRAME:
       break;
-    // With 1 operand
+      // With 1 operand
+    case OPCode::OP_CALL:
     case OPCode::OP_PUSH:
     case OPCode::OP_PRINT:
     case OPCode::OP_STORE_LOCAL:

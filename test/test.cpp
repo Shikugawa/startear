@@ -303,10 +303,6 @@ fn main() {
   StartearVMInstructionEmitter emitter;
   ast->accept(emitter);
   auto program = emitter.emit();
-  for (auto a : program.instructions()) {
-    std::cout << a << std::endl;
-  }
-  // TODO: Fix broken disassembler
   disassemble(program);
 }
 
