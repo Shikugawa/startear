@@ -2,7 +2,7 @@
 #include <fstream>
 #include <vector>
 
-#include "assert.h"
+#include "startear_assert.h"
 #include "tokenizer.h"
 
 void run(const std::string& code) {

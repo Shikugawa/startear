@@ -106,8 +106,8 @@ void VMImpl::start() {
                           Value::Category::Variable);
           STARTEAR_ASSERT(func_label_entry->getString());
           // TODO: This information should be known when code analysis phase
-          auto func_entry =
-              program_.getFunction(*func_label_entry->getString());
+          auto func_entry = program_.functionRegistry().findByName(
+              *func_label_entry->getString());
           if (!func_entry.has_value()) {
             std::cerr << fmt::format("{} is not defined",
                                      *func_label_entry->getString())
@@ -116,8 +116,8 @@ void VMImpl::start() {
             return;
           }
           frame_.top().return_pc_ = pc_ + 1;
-          pc_ = func_entry->pc_;
-          program_.updateIndex(func_entry->pc_);
+          pc_ = func_entry->get().pc_;
+          program_.updateIndex(func_entry->get().pc_);
         }
       }
       default:

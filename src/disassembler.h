@@ -28,7 +28,7 @@
 
 #include <fmt/format.h>
 
-#include "assert.h"
+#include "startear_assert.h"
 #include "opcode.h"
 #include "program.h"
 

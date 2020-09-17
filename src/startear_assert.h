@@ -23,8 +23,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef STARTEAR_ALL_ASSERT_H
-#define STARTEAR_ALL_ASSERT_H
+#ifndef STARTEAR_ALL_STARTEAR_ASSERT_H
+#define STARTEAR_ALL_STARTEAR_ASSERT_H
 
 #include <cassert>
 #include <cstdlib>
@@ -39,4 +39,6 @@ class Unimplemented : public std::logic_error {
 
 #define NOT_REACHED std::abort()
 
-#endif  // STARTEAR_ALL_ASSERT_H
+#define TESTASSERT(x) assert(x)
+
+#endif  // STARTEAR_ALL_STARTEAR_ASSERT_H

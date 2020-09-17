@@ -32,7 +32,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "assert.h"
+#include "startear_assert.h"
 #include "opcode.h"
 
 namespace Startear {

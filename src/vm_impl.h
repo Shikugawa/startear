@@ -52,13 +52,13 @@ class VMImpl : public VM {
     frame_.push(f);
   }
   void pushFrame() {
-      if (frame_.size() != 0) {
-          state_ = VMState::TerminatedWithError;
-          std::cerr << "Failed to push frame without return program counter";
-          NOT_REACHED;
-      }
-      Frame f;
-      frame_.push(f);
+    if (frame_.size() != 0) {
+      state_ = VMState::TerminatedWithError;
+      std::cerr << "Failed to push frame without return program counter";
+      NOT_REACHED;
+    }
+    Frame f;
+    frame_.push(f);
   }
   void popFrame() {
     auto return_pc = frame_.top().return_pc_;

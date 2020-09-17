@@ -36,8 +36,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "assert.h"
 #include "opcode.h"
+#include "startear_assert.h"
 
 namespace Startear {
 
@@ -105,16 +105,34 @@ class Program {
   void updateIndex(size_t i);
 
   struct FunctionMetadata {
+    std::string name_;
     size_t pc_;    // Program counter of specified function.
     size_t args_;  // The number of arguments.
   };
+
+  struct FunctionRegistry {
+    std::optional<std::reference_wrapper<const FunctionMetadata>>
+    findByProgramCounter(size_t line) const;
+    std::optional<std::reference_wrapper<const FunctionMetadata>> findByName(
+        std::string name) const;
+    void registerFunction(std::string name, size_t args, size_t pc);
+
+   private:
+      // TODO: replace flat hash map
+    std::unordered_map<size_t, std::string> pc_name_;
+    std::unordered_map<std::string, FunctionMetadata> metadata_;
+  };
+
+  friend FunctionRegistry;
 
   // Function symbol tables.
   // Register symbol name and current top instruction pointer.
   // This function is used if you'd like to create function from bytecode
   // generation AST visitor.
   void addFunction(std::string name, size_t args);
-  std::optional<FunctionMetadata> getFunction(std::string name);
+  const FunctionRegistry& functionRegistry() const {
+    return registered_function_;
+  }
 
   // Properties
   const std::vector<size_t>& instructions() { return instructions_; }
@@ -128,15 +146,24 @@ class Program {
   std::vector<size_t> instructions_;
   std::vector<Value> values_;
   // This is a pair of function label and pointer in the instructions.
-  // For example, we are provided these instructions,
+  // For example, try to consider this function
+  //
+  // fn sample() {
+  //    let a = 32;
+  //    let b = 35;
+  //    return a + b;
+  // }
+  //
+  // in this case, we can get these instructions,
   //
   // 16 | OP_PUSH 32 <- function sample
   // 17 | OP_PUSH 35
   // 18 | OP_ADD
   // 19 | OP_RETURN
   //
-  // In this case, we set the pair {"sample", 16} in this hash table.
-  std::unordered_map<std::string, FunctionMetadata> func_metadata_;
+  // In this case, we set the pair {"sample", {16, 0}} in this hash table.
+  FunctionRegistry registered_function_;
+
   // This value indicates pure index of instructions.
   // The difference between index and program counter is,
   // program counter don't care about operands.

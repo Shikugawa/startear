@@ -27,7 +27,7 @@
 
 #include <cstring>
 
-#include "assert.h"
+#include "startear_assert.h"
 
 namespace Startear {
 
@@ -90,17 +90,32 @@ size_t Program::addValue(Value v) {
 
 void Program::addFunction(std::string name, size_t args) {
   auto current_top = instructions_.size();
-  FunctionMetadata metadata{current_top, args};
-  func_metadata_.emplace(std::make_pair(name, metadata));
+  registered_function_.registerFunction(name, args, current_top);
 }
 
-std::optional<Program::FunctionMetadata> Program::getFunction(
-    std::string name) {
-  auto entry = func_metadata_.find(name);
-  if (entry != func_metadata_.end()) {
-    return entry->second;
+std::optional<std::reference_wrapper<const Program::FunctionMetadata>>
+Program::FunctionRegistry::findByProgramCounter(size_t line) const {
+  auto itr = pc_name_.find(line);
+  if (itr == pc_name_.end()) {
+    return std::nullopt;
   }
-  return std::nullopt;
+  return findByName(itr->second);
+}
+
+std::optional<std::reference_wrapper<const Program::FunctionMetadata>>
+Program::FunctionRegistry::findByName(std::string name) const {
+  auto itr2 = metadata_.find(name);
+  if (itr2 == metadata_.end()) {
+    return std::nullopt;
+  }
+  return std::reference_wrapper(itr2->second);
+}
+
+void Program::FunctionRegistry::registerFunction(std::string name, size_t args,
+                                                 size_t pc) {
+  pc_name_.emplace(std::make_pair(pc, name));
+  metadata_.emplace(
+      std::make_pair(name, Program::FunctionMetadata{name, pc, args}));
 }
 
 void Program::updateIndex(size_t i) {
