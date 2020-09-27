@@ -31,11 +31,12 @@
 
 namespace Startear {
 void VMImpl::start() {
-  auto instr_entry = program_.fetchInst();
-  incPc();
+  auto instr_entry = program_.fetchInst(pc_);
 
   while (instr_entry) {
-    auto [opcode, operand_ptrs] = instr_entry.value();
+    const auto& instr = instr_entry.value();
+    auto opcode = instr.get().opcode();
+    const auto& operand_ptrs = instr.get().operandsPointer();
     switch (opcode) {
       case OPCode::OP_PRINT: {
         STARTEAR_ASSERT(operand_ptrs.size() == 1);
@@ -96,7 +97,6 @@ void VMImpl::start() {
         auto return_pc = frame_.top().return_pc_;
         popFrame();
         pc_ = return_pc;
-        program_.updateIndex(return_pc);
       }
       case OPCode::OP_CALL: {
         STARTEAR_ASSERT(operand_ptrs.size() == 1);
@@ -117,7 +117,6 @@ void VMImpl::start() {
           }
           frame_.top().return_pc_ = pc_ + 1;
           pc_ = func_entry->get().pc_;
-          program_.updateIndex(func_entry->get().pc_);
         }
       }
       default:
@@ -126,12 +125,13 @@ void VMImpl::start() {
         state_ = VMState::TerminatedWithError;
         return;
     }
-    instr_entry = program_.fetchInst();
+    incPc();
+    instr_entry = program_.fetchInst(pc_);
   }
   state_ = VMState::SuccessfulTerminated;
 }
 
-void VMImpl::restart(Program &program) {
+void VMImpl::restart(Program& program) {
   STARTEAR_ASSERT(state_ == VMState::SuccessfulTerminated ||
                   state_ == VMState::TerminatedWithError);
   program_ = program;

@@ -23,12 +23,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "startear_assert.h"
 #include "ast.h"
 #include "disassembler.h"
 #include "gtest/gtest.h"
 #include "parser.h"
 #include "program.h"
+#include "startear_assert.h"
 #include "tokenizer.h"
 #include "vm_impl.h"
 
@@ -60,89 +60,113 @@ class TokenizerTest : public testing::Test {
   size_t current_token_ = 0;
 };
 
-TEST_F(TokenizerTest, BasicTests) {
+TEST(Basic, BasicTests) {
   Startear::Tokenizer tokenizer("+");
   auto& result = tokenizer.scanTokens();
   EXPECT_EQ(TokenType::PLUS, result[0].type());
-  result = tokenizer.scanTokens("-");
+
+  Startear::Tokenizer tokenizer2("-");
+  result = tokenizer2.scanTokens();
   EXPECT_EQ(TokenType::MINUS, result[0].type());
-  result = tokenizer.scanTokens("!=");
+
+  Startear::Tokenizer tokenizer3("!=");
+  result = tokenizer3.scanTokens();
   EXPECT_EQ(TokenType::BANG_EQUAL, result[0].type());
-  result = tokenizer.scanTokens("/");
+
+  Startear::Tokenizer tokenizer4("/");
+  result = tokenizer4.scanTokens();
   EXPECT_EQ(TokenType::SLASH, result[0].type());
-  result = tokenizer.scanTokens("// test\n");
+
+  Startear::Tokenizer tokenizer5("// test\n");
+  result = tokenizer5.scanTokens();
   EXPECT_EQ(TokenType::COMMENT, result[0].type());
-  EXPECT_EQ(" test", result[0].lexeme());
-  result = tokenizer.scanTokens("\"sample\"");
+
+  Startear::Tokenizer tokenizer6(" test");
+  result = tokenizer6.scanTokens();
+  EXPECT_EQ("test", result[0].lexeme());
+
+  Startear::Tokenizer tokenizer7("\"sample\"");
+  result = tokenizer7.scanTokens();
   EXPECT_EQ(TokenType::STRING, result[0].type());
+
+  Startear::Tokenizer tokenizer8("sample");
+  result = tokenizer8.scanTokens();
   EXPECT_EQ("sample", result[0].lexeme());
-  result = tokenizer.scanTokens("\"sample");
+
+  Startear::Tokenizer tokenizer9("\"sample");
+  result = tokenizer9.scanTokens();
   EXPECT_EQ(result.size(), 0);
-  result = tokenizer.scanTokens("123;");
+
+  Startear::Tokenizer tokenizer10("123;");
+  result = tokenizer10.scanTokens();
   EXPECT_EQ(TokenType::NUMBER, result[0].type());
   EXPECT_EQ("123", result[0].lexeme());
   EXPECT_EQ(TokenType::SEMICOLON, result[1].type());
-  result = tokenizer.scanTokens("let vault");
+
+  Startear::Tokenizer tokenizer11("let vault");
+  result = tokenizer11.scanTokens();
   EXPECT_EQ(TokenType::VAR, result[0].type());
   EXPECT_EQ("vault", result[1].lexeme());
   EXPECT_EQ(TokenType::IDENTIFIER, result[1].type());
+}
 
-  {
-    result_ = tokenizer.scanTokens("for (let i = 0.0000; i < 65535; i++) {}");
-    checkToken(TokenType::FOR);
-    checkToken(TokenType::LEFT_PAREN);
-    checkToken(TokenType::VAR);
-    checkToken(TokenType::IDENTIFIER, "i");
-    checkToken(TokenType::EQUAL);
-    checkToken(TokenType::NUMBER, "0.0000");
-    checkToken(TokenType::SEMICOLON);
-    checkToken(TokenType::IDENTIFIER, "i");
-    checkToken(TokenType::LESS);
-    checkToken(TokenType::NUMBER, "65535");
-    checkToken(TokenType::SEMICOLON);
-    checkToken(TokenType::IDENTIFIER, "i");
-    checkToken(TokenType::PLUS);
-    checkToken(TokenType::PLUS);
-    checkToken(TokenType::RIGHT_PAREN);
-    checkToken(TokenType::LEFT_BRACE);
-    checkToken(TokenType::RIGHT_BRACE);
-    reset();
-  }
+TEST_F(TokenizerTest, ForTest) {
+  Startear::Tokenizer tokenizer("for (let i = 0.0000; i < 65535; i++) {}");
+  result_ = tokenizer.scanTokens();
+  checkToken(TokenType::FOR);
+  checkToken(TokenType::LEFT_PAREN);
+  checkToken(TokenType::VAR);
+  checkToken(TokenType::IDENTIFIER, "i");
+  checkToken(TokenType::EQUAL);
+  checkToken(TokenType::NUMBER, "0.0000");
+  checkToken(TokenType::SEMICOLON);
+  checkToken(TokenType::IDENTIFIER, "i");
+  checkToken(TokenType::LESS);
+  checkToken(TokenType::NUMBER, "65535");
+  checkToken(TokenType::SEMICOLON);
+  checkToken(TokenType::IDENTIFIER, "i");
+  checkToken(TokenType::PLUS);
+  checkToken(TokenType::PLUS);
+  checkToken(TokenType::RIGHT_PAREN);
+  checkToken(TokenType::LEFT_BRACE);
+  checkToken(TokenType::RIGHT_BRACE);
+  reset();
+}
 
-  {
-    std::string code = R"(
+TEST_F(TokenizerTest, CodeBlockTest) {
+  std::string code = R"(
 fn main(arg1, arg2) {
     let a = 32;
     let b = 43;
     return a + b;
 }
                                )";
-    result_ = tokenizer.scanTokens(code);
-    checkToken(TokenType::FUN);
-    checkToken(TokenType::IDENTIFIER, "main");
-    checkToken(TokenType::LEFT_PAREN);
-    checkToken(TokenType::IDENTIFIER, "arg1");
-    checkToken(TokenType::COMMA);
-    checkToken(TokenType::IDENTIFIER, "arg2");
-    checkToken(TokenType::RIGHT_PAREN);
-    checkToken(TokenType::LEFT_BRACE);
-    checkToken(TokenType::VAR);
-    checkToken(TokenType::IDENTIFIER, "a");
-    checkToken(TokenType::EQUAL);
-    checkToken(TokenType::NUMBER, "32");
-    checkToken(TokenType::SEMICOLON);
-    checkToken(TokenType::VAR);
-    checkToken(TokenType::IDENTIFIER, "b");
-    checkToken(TokenType::EQUAL);
-    checkToken(TokenType::NUMBER, "43");
-    checkToken(TokenType::SEMICOLON);
-    checkToken(TokenType::RETURN);
-    checkToken(TokenType::IDENTIFIER, "a");
-    checkToken(TokenType::PLUS);
-    checkToken(TokenType::IDENTIFIER, "b");
-    checkToken(TokenType::SEMICOLON);
-    reset();
-  }
+  Startear::Tokenizer tokenizer(code);
+  result_ = tokenizer.scanTokens();
+  checkToken(TokenType::FUN);
+  checkToken(TokenType::IDENTIFIER, "main");
+  checkToken(TokenType::LEFT_PAREN);
+  checkToken(TokenType::IDENTIFIER, "arg1");
+  checkToken(TokenType::COMMA);
+  checkToken(TokenType::IDENTIFIER, "arg2");
+  checkToken(TokenType::RIGHT_PAREN);
+  checkToken(TokenType::LEFT_BRACE);
+  checkToken(TokenType::VAR);
+  checkToken(TokenType::IDENTIFIER, "a");
+  checkToken(TokenType::EQUAL);
+  checkToken(TokenType::NUMBER, "32");
+  checkToken(TokenType::SEMICOLON);
+  checkToken(TokenType::VAR);
+  checkToken(TokenType::IDENTIFIER, "b");
+  checkToken(TokenType::EQUAL);
+  checkToken(TokenType::NUMBER, "43");
+  checkToken(TokenType::SEMICOLON);
+  checkToken(TokenType::RETURN);
+  checkToken(TokenType::IDENTIFIER, "a");
+  checkToken(TokenType::PLUS);
+  checkToken(TokenType::IDENTIFIER, "b");
+  checkToken(TokenType::SEMICOLON);
+  reset();
 }
 
 class ParserTest : public testing::Test {
@@ -203,28 +227,26 @@ class EmitterTest : public testing::Test {
 TEST_F(EmitterTest, BasicTest) {
   run("2 + 3");
   auto program = emitter_.emit();
-
-  ASSERT_EQ(program.instructions()[0], (size_t)OPCode::OP_PUSH);
-  ASSERT_EQ(program.instructions()[1], 0);
-  ASSERT_EQ(program.instructions()[2], (size_t)OPCode::OP_PUSH);
-  ASSERT_EQ(program.instructions()[3], 1);
-  ASSERT_EQ(program.instructions()[4], (size_t)OPCode::OP_ADD);
-  ASSERT_EQ(program.values()[0].getDouble().value(), 2);
-  ASSERT_EQ(program.values()[1].getDouble().value(), 3);
+  ASSERT_EQ(program.fetchInst(0)->get().opcode(), OPCode::OP_PUSH);
+  ASSERT_EQ(program.fetchInst(0)->get().operandsPointer()[0], 0);
+  ASSERT_EQ(program.fetchInst(1)->get().opcode(), OPCode::OP_PUSH);
+  ASSERT_EQ(program.fetchInst(1)->get().operandsPointer()[0], 1);
+  ASSERT_EQ(program.fetchInst(2)->get().opcode(), OPCode::OP_ADD);
+  ASSERT_EQ(program.fetchValue(0)->getDouble(), 2.0);
+  ASSERT_EQ(program.fetchValue(1)->getDouble(), 3.0);
 }
 
 TEST_F(EmitterTest, StoreVariable) {
-  run("let a = 3 + 1;");
+  run("let a = 3 + 1");
   auto program = emitter_.emit();
-  disassemble(program);
-  ASSERT_EQ(program.instructions()[0], (size_t)OPCode::OP_PUSH);
-  ASSERT_EQ(program.instructions()[1], 0);
-  ASSERT_EQ(program.instructions()[2], (size_t)OPCode::OP_PUSH);
-  ASSERT_EQ(program.instructions()[3], 1);
-  ASSERT_EQ(program.instructions()[4], (size_t)OPCode::OP_ADD);
-  ASSERT_EQ(program.instructions()[5], (size_t)OPCode::OP_STORE_LOCAL);
+  ASSERT_EQ(program.fetchInst(0)->get().opcode(), OPCode::OP_PUSH);
+  ASSERT_EQ(program.fetchInst(0)->get().operandsPointer()[0], 0);
+  ASSERT_EQ(program.fetchInst(1)->get().opcode(), OPCode::OP_PUSH);
+  ASSERT_EQ(program.fetchInst(1)->get().operandsPointer()[0], 1);
+  ASSERT_EQ(program.fetchInst(2)->get().opcode(), OPCode::OP_ADD);
+  ASSERT_EQ(program.fetchInst(3)->get().opcode(), OPCode::OP_STORE_LOCAL);
 
-  run("let b = a + 2;");
+  run("let b = a + 2");
   program = emitter_.emit();
   disassemble(program);
 }

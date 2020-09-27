@@ -59,21 +59,14 @@ std::optional<double> Value::getDouble() const {
   return *v_ptr;
 }
 
-void Program::addInst(OPCode code) {
-  instructions_.emplace_back(static_cast<size_t>(code));
-}
+void Program::addInst(OPCode code) { instructions_.emplace_back(code); }
 
-std::optional<std::pair<OPCode, std::deque<size_t>>> Program::fetchInst() {
-  auto consume_entry = consume();
-  if (!consume_entry) {
+std::optional<std::reference_wrapper<const Instruction>> Program::fetchInst(
+    size_t pc) {
+  if (isProgramEnd(pc)) {
     return std::nullopt;
   }
-  auto [opcode, offset] = consume_entry.value();
-  std::deque<size_t> operands;
-  for (auto i = index_ - offset; i < index_; ++i) {
-    operands.emplace_back(instructions_[i]);
-  }
-  return std::make_pair(opcode, operands);
+  return instructions_[pc];
 }
 
 std::optional<Value> Program::fetchValue(size_t i) {
@@ -118,11 +111,6 @@ void Program::FunctionRegistry::registerFunction(std::string name, size_t args,
       std::make_pair(name, Program::FunctionMetadata{name, pc, args}));
 }
 
-void Program::updateIndex(size_t i) {
-  STARTEAR_ASSERT(0 <= i && i < instructions_.size());
-  index_ = i;
-}
-
 bool Program::validOperandSize(OPCode code, size_t operand_size) {
   const auto expect_size = [&operand_size](size_t expected) {
     return operand_size == expected;
@@ -144,36 +132,4 @@ bool Program::validOperandSize(OPCode code, size_t operand_size) {
   }
 }
 
-std::optional<std::pair<OPCode, uint8_t>> Program::consume() {
-  if (isProgramEnd()) {
-    return std::nullopt;
-  }
-  ++index_;
-
-  auto opcode = static_cast<OPCode>(instructions_[index_ - 1]);
-  uint8_t offset = 0;
-
-  switch (opcode) {
-      // With no operand
-    case OPCode::OP_ADD:
-    case OPCode::OP_RETURN:
-    case OPCode::OP_PUSH_FRAME:
-    case OPCode::OP_POP_FRAME:
-      break;
-      // With 1 operand
-    case OPCode::OP_CALL:
-    case OPCode::OP_PUSH:
-    case OPCode::OP_PRINT:
-    case OPCode::OP_STORE_LOCAL:
-    case OPCode::OP_LOAD_LOCAL:
-      ++index_;
-      offset = 1;
-      break;
-    default:
-      std::cout << "Unsupported instruction" << std::endl;
-      break;
-  }
-
-  return std::make_pair(opcode, offset);
-}
 }  // namespace Startear

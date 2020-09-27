@@ -39,6 +39,4 @@ class Unimplemented : public std::logic_error {
 
 #define NOT_REACHED std::abort()
 
-#define TESTASSERT(x) assert(x)
-
 #endif  // STARTEAR_ALL_STARTEAR_ASSERT_H

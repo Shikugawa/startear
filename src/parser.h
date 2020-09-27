@@ -52,8 +52,13 @@ class Parser {
   FunctionCallPtr functionCall();
   ReturnDeclarationPtr returnDeclaration();
 
-  bool match(TokenType expected) {
-    return tokens_[current_].type() == expected;
+  bool match(TokenType expected) { return match(expected, 0); }
+
+  bool match(TokenType expected, size_t ahead) {
+    if (ahead + current_ >= tokens_.size()) {
+      return false;
+    }
+    return tokens_[current_ + ahead].type() == expected;
   }
 
   void forward() {

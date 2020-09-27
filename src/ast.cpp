@@ -250,7 +250,6 @@ void LetStatement::self(Program& program) {
 void FunctionCall::accept(IASTNodeVisitor& visitor) { visitor.visit(*this); }
 
 void FunctionCall::self(Program& program) {
-    program.addFunction(token_->lexeme(), statements_.size());
   program.addInst(OPCode::OP_PUSH_FRAME);
   for (const auto& stmt : statements_) {
     static_cast<ASTNode*>(stmt.get())->self(program);
@@ -276,6 +275,7 @@ void FunctionDeclaration::accept(IASTNodeVisitor& visitor) {
 
 void FunctionDeclaration::self(Program& program) {
   for (const auto& stmt : statements_) {
+    program.addFunction(name_->lexeme(), args_.size());
     static_cast<ASTNode*>(stmt.get())->self(program);
   }
 }

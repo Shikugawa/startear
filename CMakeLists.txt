@@ -4,6 +4,7 @@ project(startear_all)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "-fpermissive")
+set(CMAKE_CXX_FLAGS "-fstandalone-debug")
 
 add_subdirectory(src)
 

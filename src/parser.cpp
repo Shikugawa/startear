@@ -195,7 +195,7 @@ LetStatementPtr Parser::letStatement() {
   if (match(TokenType::EQUAL)) {
     forward();
     LetStatementPtr stmt;
-    if (match(TokenType::IDENTIFIER)) {
+    if (match(TokenType::IDENTIFIER) && match(TokenType::LEFT_PAREN, 1)) {
       FunctionCallPtr expr = functionCall();
       if (!expr) {
         std::cerr << "failed to parse" << std::endl;

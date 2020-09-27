@@ -28,9 +28,9 @@
 
 #include <fmt/format.h>
 
-#include "startear_assert.h"
 #include "opcode.h"
 #include "program.h"
+#include "startear_assert.h"
 
 #define SET_INSTRUCTION(x)     \
   if (instr_str.size() == 0) { \
@@ -41,10 +41,16 @@ namespace Startear {
 
 void disassemble(Program& p) {
   size_t ptr = 0;
-  while (ptr < p.instructions().size()) {
-    auto instr = static_cast<OPCode>(p.instructions()[ptr]);
+  while (true) {
+    auto instr_entry = p.fetchInst(ptr);
+    if (!instr_entry.has_value()) {
+      break;
+    }
+
     std::string instr_str;
-    switch (instr) {
+    auto func_name = p.functionRegistry().findByProgramCounter(ptr);
+
+    switch (instr_entry->get().opcode()) {
       case OPCode::OP_ADD:
         instr_str = "OP_ADD";
       case OPCode::OP_PUSH_FRAME:
@@ -61,36 +67,42 @@ void disassemble(Program& p) {
         SET_INSTRUCTION("OP_CALL")
       case OPCode::OP_STORE_LOCAL: {
         SET_INSTRUCTION("OP_STORE_LOCAL");
-        ++ptr;
-        auto operand_ptr = p.instructions()[ptr];
-        auto operand_data_entry = p.fetchValue(operand_ptr);
+        auto operand_ptrs = instr_entry->get().operandsPointer();
+        STARTEAR_ASSERT(operand_ptrs.size() == 1);
+        auto operand_data_entry = p.fetchValue(operand_ptrs[0]);
         std::cout << fmt::format("{} {}", instr_str,
-                                 operand_data_entry->getString().value())
-                  << std::endl;
+                                 operand_data_entry->getString().value());
+        if (func_name.has_value()) {
+          std::cout << fmt::format(" <- {}", func_name.value().get().name_);
+        }
+        std::cout << std::endl;
         break;
       }
       case OPCode::OP_PUSH:
         SET_INSTRUCTION("OP_PUSH");
       case OPCode::OP_PRINT: {
         SET_INSTRUCTION("OP_PRINT");
-        ++ptr;
-        auto operand_ptr = p.instructions()[ptr];
-        auto operand_data_entry = p.fetchValue(operand_ptr);
+        auto operand_ptrs = instr_entry->get().operandsPointer();
+        STARTEAR_ASSERT(operand_ptrs.size() == 1);
+        auto operand_data_entry = p.fetchValue(operand_ptrs[0]);
         if (operand_data_entry) {
           switch (operand_data_entry->type()) {
             case Value::SupportedTypes::String:
               std::cout << fmt::format("{} {}", instr_str,
-                                       operand_data_entry->getString().value())
-                        << std::endl;
+                                       operand_data_entry->getString().value());
               break;
             case Value::SupportedTypes::Double:
               std::cout << fmt::format("{} {}", instr_str,
-                                       operand_data_entry->getDouble().value())
-                        << std::endl;
+                                       operand_data_entry->getDouble().value());
               break;
             default:
               NOT_REACHED;
           }
+          //          if (func_name.has_value()) {
+          //            std::cout << fmt::format(" <- {}",
+          //            func_name.value().get().name_);
+          //          }
+          std::cout << std::endl;
         }
         break;
       }

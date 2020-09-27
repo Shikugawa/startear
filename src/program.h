@@ -76,6 +76,23 @@ class Value {
   Category category_;
 };
 
+class Instruction {
+ public:
+  Instruction(OPCode code) : code_(code) {}
+  template <class It>
+  Instruction(OPCode code, It begin, It end)
+      : code_(code), operands_ptr_(begin, end) {
+    //    std::cout << operands_ptr_[0] << std::endl;
+  }
+
+  const OPCode opcode() const { return code_; }
+  const std::vector<size_t>& operandsPointer() const { return operands_ptr_; }
+
+ private:
+  OPCode code_;
+  std::vector<size_t> operands_ptr_;
+};
+
 template <typename T>
 Value::Value(Category c, T v) : category_(c) {
   if constexpr (std::is_same<std::decay_t<decltype(v)>, std::string>::value) {
@@ -96,13 +113,11 @@ class Program {
   void addInst(OPCode code,
                std::initializer_list<std::pair<Value::Category, T>> operands);
   void addInst(OPCode code);
-  std::optional<std::pair<OPCode, std::deque<size_t>>> fetchInst();
+  std::optional<std::reference_wrapper<const Instruction>> fetchInst(size_t pc);
 
   // Value
   size_t addValue(Value v);
   std::optional<Value> fetchValue(size_t i);
-
-  void updateIndex(size_t i);
 
   struct FunctionMetadata {
     std::string name_;
@@ -118,7 +133,7 @@ class Program {
     void registerFunction(std::string name, size_t args, size_t pc);
 
    private:
-      // TODO: replace flat hash map
+    // TODO: replace flat hash map
     std::unordered_map<size_t, std::string> pc_name_;
     std::unordered_map<std::string, FunctionMetadata> metadata_;
   };
@@ -135,15 +150,14 @@ class Program {
   }
 
   // Properties
-  const std::vector<size_t>& instructions() { return instructions_; }
+  const std::vector<Instruction>& instructions() { return instructions_; }
   const std::vector<Value>& values() { return values_; }
 
  private:
-  std::optional<std::pair<OPCode, uint8_t>> consume();
   bool validOperandSize(OPCode code, size_t operand_size);
-  bool isProgramEnd() const { return index_ >= instructions_.size(); }
+  bool isProgramEnd(size_t pc) const { return pc >= instructions_.size(); }
 
-  std::vector<size_t> instructions_;
+  std::vector<Instruction> instructions_;
   std::vector<Value> values_;
   // This is a pair of function label and pointer in the instructions.
   // For example, try to consider this function
@@ -163,30 +177,22 @@ class Program {
   //
   // In this case, we set the pair {"sample", {16, 0}} in this hash table.
   FunctionRegistry registered_function_;
-
-  // This value indicates pure index of instructions.
-  // The difference between index and program counter is,
-  // program counter don't care about operands.
-  // e.g.
-  // OP_PUSH 3 OP_PUSH 4 OP_ADD
-  //    ↑    ↑    ↑
-  //    pc index pc(next)
-  size_t index_{0};
 };
 
 template <typename T>
 void Program::addInst(
     OPCode code,
     std::initializer_list<std::pair<Value::Category, T>> operands) {
-  addInst(code);
   if (!validOperandSize(code, operands.size())) {
     return;
   }
+  std::vector<size_t> operands_ptr;
   for (const auto& [category, operand] : operands) {
     Value v(category, operand);
     auto ptr = addValue(v);
-    instructions_.emplace_back(ptr);
+    operands_ptr.emplace_back(ptr);
   }
+  instructions_.emplace_back(code, operands_ptr.begin(), operands_ptr.end());
 }
 
 }  // namespace Startear
