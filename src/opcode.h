@@ -26,55 +26,67 @@
 #ifndef STARTEAR_ALL_OPCODE_H
 #define STARTEAR_ALL_OPCODE_H
 
+#include <string>
+
 namespace Startear {
 
 enum class OPCode : size_t {
-  // Print a operand
-  // e.g.
-  // OP_PRINT 1.0
-  // OP_PRINT "sample"
+  /**
+   * Print a operand
+   * e.g.
+   * OP_PRINT 1.0
+   * OP_PRINT "sample"
+   */
   OP_PRINT,
-  // Push a operand to the top of stack.
-  // e.g.
-  // OP_PUSH 3.0
+  /**
+   * Push a operand to the top of stack.
+   * e.g. OP_PUSH 3.0
+   */
   OP_PUSH,
-  // Pop two values from the stack, and add them. Finally, store calculation
-  // result
+  /**
+   * Pop two values from the stack, and add them. Finally, store calculation
+   * result
+   */
   OP_ADD,
-  // Save stack top value with operand variable name.
-  // e.g.
-  // OP_STORE_LOCAL "n"
+  /**
+   * Save stack top value with operand variable name.
+   * e.g. OP_STORE_LOCAL "n"
+   */
   OP_STORE_LOCAL,
-  // Look up specified variable and push top of stack.
-  // e.g.
-  // OP_LOAD_LOCAL "n"
+  /**
+   * Look up specified variable and push top of stack.
+   * e.g. OP_LOAD_LOCAL "n"
+   */
   OP_LOAD_LOCAL,
-  // Call function.
-  // e.g.
-  // OP_CALL "sub"
+  /**
+   * Call function.
+   * e.g. OP_CALL "sub"
+   *
+   * Create frame. frame is defined as the unit of scope.
+   * In general, first operand is used to specify return point.
+   * e.g.
+   *
+   * 32 | OP_RETURN # pop frame. If there is returning value.
+   *                # VM will drain top value of current stack,
+   *                # and push it into the stack on previous frame.
+   *                # It will recover program counter from current frame.
+   *
+   * 42 | OP_PUSH 32         # first argument
+   * 43 | OP_CALL "sub"      # function call. It will set next pointer to return
+   * back.
+   * 44 | OP_STORE_LOCAL "n" # Store returned value from function "sub"
+   *
+   * Note that only to use this instruction without operands will be treated as
+   * startup function like "main".
+   */
   OP_CALL,
-  // Create frame. frame is defined as the unit of scope.
-  // In general, first operand is used to specify return point.
-  // e.g.
-  //
-  // 32 | OP_RETURN # pop frame. If there is returning value.
-  //                # VM will drain top value of current stack,
-  //                # and push it into the stack on previous frame.
-  //                # It will recover program counter from current frame.
-  //
-  // 41 | OP_PUSH_FRAME
-  // 42 | OP_PUSH 32         # first argument
-  // 43 | OP_CALL "sub"      # function call. It will set next pointer to return
-  // back.
-  // 44 | OP_STORE_LOCAL "n" # Store returned value from function "sub"
-  //
-  // Note that only to use this instruction without operands will be treated as
-  // startup function like "main".
-  OP_PUSH_FRAME,
-  OP_POP_FRAME,
-  // Return the stack ptr and program counter. If there is return values
-  // , store them to the top of stack. For more detail, it is described on
-  // OP_PUSH_FRAME.
+  OP_PUSH_FRAME,  // deprecated
+  OP_POP_FRAME,   // deprecated
+  /**
+   * Return the stack ptr and program counter. If there is return values
+   * , store them to the top of stack. It is not supported to return multiple
+   * values.
+   */
   OP_RETURN,
 };
 

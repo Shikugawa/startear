@@ -285,7 +285,7 @@ TEST(VmTest, BasicTest) {
 
 class VMExecIntegration : public testing::Test {
  public:
-  void prepare(std::string& code, std::function<void(Program&)> program_eval,
+  void prepare(std::string& code, std::function<void(Program&)> program_eval, std::function<void(VMImpl&)> vm_eval,
                bool dbg) {
     Tokenizer t(code);
     Parser p(t.scanTokens());
@@ -306,6 +306,7 @@ class VMExecIntegration : public testing::Test {
     }
 
     vm.start();
+    vm_eval(vm);
   }
 };
 
@@ -318,6 +319,7 @@ fn main() {}
       [&](Program& program) {
         EXPECT_EQ(program.instructions()[0].opcode(), OPCode::OP_RETURN);
       },
+      [&](VMImpl& vm) {},
       true);
 }
 
@@ -342,6 +344,23 @@ fn main() {
         EXPECT_EQ(program.instructions()[6].opcode(), OPCode::OP_ADD);
         EXPECT_EQ(program.instructions()[7].opcode(), OPCode::OP_STORE_LOCAL);
       },
+      [&](VMImpl& vm) {
+        const auto& top_frame = vm.peekFrame();
+        // Variable State
+        ASSERT_EQ(top_frame.lv_table_.size(), 3);
+
+        const auto& entry_a = top_frame.lv_table_.find("a");
+        ASSERT_TRUE(entry_a != top_frame.lv_table_.end());
+        ASSERT_EQ(entry_a->second.getDouble().value(), 3.0);
+
+        const auto& entry_b = top_frame.lv_table_.find("b");
+        ASSERT_TRUE(entry_b != top_frame.lv_table_.end());
+        ASSERT_EQ(entry_b->second.getDouble().value(), 4.0);
+
+        const auto& entry_c = top_frame.lv_table_.find("c");
+        ASSERT_TRUE(entry_c != top_frame.lv_table_.end());
+        ASSERT_EQ(entry_c->second.getDouble().value(), 7.0);
+      },
       true);
 }
 
@@ -365,6 +384,15 @@ fn main() {
         EXPECT_EQ(program.instructions()[3].opcode(), OPCode::OP_PUSH);
         EXPECT_EQ(program.instructions()[4].opcode(), OPCode::OP_CALL);
         EXPECT_EQ(program.instructions()[5].opcode(), OPCode::OP_STORE_LOCAL);
+      },
+      [&](VMImpl& vm) {
+        const auto& top_frame = vm.peekFrame();
+
+        // Variable state
+        ASSERT_EQ(top_frame.lv_table_.size(), 1);
+        const auto& entry_b = top_frame.lv_table_.find("b");
+        ASSERT_TRUE(entry_b != top_frame.lv_table_.end());
+        ASSERT_EQ(entry_b->second.getDouble().value(), 3.0);
       },
       true);
 }

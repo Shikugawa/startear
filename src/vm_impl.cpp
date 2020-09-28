@@ -43,9 +43,12 @@ VMImpl::VMImpl(Program& program) : program_(program) {
 }
 
 void VMImpl::start() {
-  auto instr_entry = program_.fetchInst(pc_);
+  while (true) {
+    auto instr_entry = program_.fetchInst(pc_);
+    if (!instr_entry.has_value()) {
+      break;
+    }
 
-  while (instr_entry) {
     const auto& instr = instr_entry.value();
     auto opcode = instr.get().opcode();
     const auto& operand_ptrs = instr.get().operandsPointer();
@@ -57,7 +60,10 @@ void VMImpl::start() {
         if (data_entry) {
           STARTEAR_ASSERT(data_entry->category() == Value::Category::Literal);
           print(*data_entry);
+        } else {
+          NOT_REACHED;
         }
+        incPc();
         break;
       }
       case OPCode::OP_PUSH: {
@@ -69,11 +75,13 @@ void VMImpl::start() {
         } else {
           NOT_REACHED;
         }
+        incPc();
         break;
       }
       case OPCode::OP_ADD: {
         STARTEAR_ASSERT(operand_ptrs.size() == 0);
         add();
+        incPc();
         break;
       }
       case OPCode::OP_STORE_LOCAL: {
@@ -84,7 +92,10 @@ void VMImpl::start() {
           STARTEAR_ASSERT(variable_name_entry->getString().has_value());
           auto variable_name = *variable_name_entry->getString();
           saveLocalVariableTable(variable_name, stack_top);
+        } else {
+          NOT_REACHED;
         }
+        incPc();
         break;
       }
       case OPCode::OP_LOAD_LOCAL: {
@@ -92,18 +103,24 @@ void VMImpl::start() {
         auto value_entry = lookupLocalVariableTable(operand_ptrs[0]);
         if (value_entry) {
           pushStack(*value_entry);
+        } else {
+          NOT_REACHED;
         }
+        incPc();
         break;
       }
       case OPCode::OP_PUSH_FRAME: {
         STARTEAR_ASSERT(operand_ptrs.size() == 0);
         pushFrame();
+        incPc();
         break;
       }
       case OPCode::OP_RETURN: {
         auto return_pc = frame_.top().return_pc_;
+        auto return_value = popStack();
         popFrame();
         pc_ = return_pc;
+        pushStack(return_value);
         break;
       }
       case OPCode::OP_CALL: {
@@ -135,6 +152,8 @@ void VMImpl::start() {
 
           pc_ = func_entry->get().pc_;
           frame_.emplace(next_frame);
+        } else {
+          NOT_REACHED;
         }
         break;
       }
@@ -145,9 +164,13 @@ void VMImpl::start() {
         state_ = VMState::TerminatedWithError;
         return;
     }
-    incPc();
-    instr_entry = program_.fetchInst(pc_);
   }
+
+  /**
+   * TODO: We should pop main frame when execution is finished.
+   * In this implementation, we remain it to analyse frame state on test.
+   * Add hooking strategy to check them at test time.
+   */
   state_ = VMState::SuccessfulTerminated;
 }
 
@@ -171,21 +194,18 @@ std::optional<Value> VMImpl::lookupLocalVariableTable(size_t ptr) {
     if (variable_itr == frame_.top().lv_table_.end()) {
       return std::nullopt;
     }
-    auto literal = program_.fetchValue(variable_itr->second);
-    STARTEAR_ASSERT(literal->category() == Value::Category::Literal);
-    if (!literal) {
-      return std::nullopt;
-    }
-    return *literal;
+    auto literal = variable_itr->second;
+    STARTEAR_ASSERT(literal.category() == Value::Category::Literal);
+    return literal;
   }
   return std::nullopt;
 }
 
-void VMImpl::saveLocalVariableTable(std::string name, Value v) {
-  frame_.top().lv_table_[name] = program_.addValue(v);
+void VMImpl::saveLocalVariableTable(std::string name, Value& v) {
+  frame_.top().lv_table_.emplace(name, v);
 }
 
-void VMImpl::print(Value v) {
+void VMImpl::print(Value& v) {
   switch (v.type()) {
     case Value::SupportedTypes::String:
       if (!v.getString()) NOT_REACHED;

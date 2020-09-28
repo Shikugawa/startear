@@ -43,26 +43,44 @@ class VMImpl : public VM {
 
   // VM
   void incPc() override { ++pc_; }
+
   void pushStack(Value v) override {
     STARTEAR_ASSERT(frame_.size() != 0);
     frame_.top().stack_.push(v);
   }
+
   Value getStackTop() {
     STARTEAR_ASSERT(frame_.size() != 0);
     return frame_.top().stack_.top();
   }
+
   Value popStack() override {
     STARTEAR_ASSERT(frame_.size() != 0);
+    STARTEAR_ASSERT(frame_.top().stack_.size() != 0);
     auto top = frame_.top().stack_.top();
     frame_.top().stack_.pop();
     return top;
   }
+
+  // It determines the scope of program.
+  // We assume that this is used as stack way.
+  struct Frame {
+    std::stack<Value> stack_;  // Execution stack
+    /**
+     * It might be not efficient approach to save local variable with the pair of variable name and entity.
+     * Is there a critical approach to improve memory efficiency?
+     */
+    std::unordered_map<std::string, Value> lv_table_;  // Local variable table
+    // Program counter which is used to point out the place of memory.
+    size_t return_pc_{0};
+  };
 
   void pushFrame(size_t return_pc) {
     Frame f;
     f.return_pc_ = return_pc;
     frame_.push(f);
   }
+
   void pushFrame() {
     // Only to call at once.
     if (frame_.size() != 0) {
@@ -73,11 +91,18 @@ class VMImpl : public VM {
     Frame f;
     frame_.push(f);
   }
+
   void popFrame() {
     auto return_pc = frame_.top().return_pc_;
     pc_ = return_pc;
     frame_.pop();
   }
+
+  const Frame& peekFrame() {
+    STARTEAR_ASSERT(frame_.size() > 0);
+    return frame_.top();
+  }
+
   void start();
   void restart(Program& program);
 
@@ -92,18 +117,9 @@ class VMImpl : public VM {
     TerminatedWithError,
   };
 
-  // It determines the scope of program.
-  // We assume that this is used as stack way.
-  struct Frame {
-    std::stack<Value> stack_;                           // Execution stack
-    std::unordered_map<std::string, size_t> lv_table_;  // Local variable table
-    // Program counter which is used to point out the place of memory.
-    size_t return_pc_{0};
-  };
-
   std::optional<Value> lookupLocalVariableTable(size_t ptr);
-  void saveLocalVariableTable(std::string name, Value v);
-  void print(Value v);
+  void saveLocalVariableTable(std::string name, Value& v);
+  void print(Value& v);
   void add();
 
   size_t pc_{0};      // Program counter

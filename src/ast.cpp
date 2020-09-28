@@ -312,7 +312,7 @@ void ReturnDeclaration::self(Program& program) {
   if (std::holds_alternative<PrimaryPtr>(token_)) {  // Number
     program.addInst(OPCode::OP_PUSH,
                     {std::make_pair(Value::Category::Literal,
-                                    std::get<PrimaryPtr>(token_)->lexeme())});
+                                    std::stod(std::get<PrimaryPtr>(token_)->lexeme()))});
   } else if (std::holds_alternative<NormalPtr>(token_)) {  // Identifier
     program.addInst(OPCode::OP_LOAD_LOCAL,
                     {std::make_pair(Value::Category::Variable,
