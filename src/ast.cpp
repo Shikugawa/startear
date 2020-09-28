@@ -250,7 +250,6 @@ void LetStatement::self(Program& program) {
 void FunctionCall::accept(IASTNodeVisitor& visitor) { visitor.visit(*this); }
 
 void FunctionCall::self(Program& program) {
-  program.addInst(OPCode::OP_PUSH_FRAME);
   for (const auto& stmt : statements_) {
     static_cast<ASTNode*>(stmt.get())->self(program);
   }
@@ -274,8 +273,13 @@ void FunctionDeclaration::accept(IASTNodeVisitor& visitor) {
 }
 
 void FunctionDeclaration::self(Program& program) {
+  program.addFunction(name_->lexeme(), args_.size());
+  // Just to add return instruction when there is no statement in this function.
+  if (statements_.size() == 0) {
+    program.addInst(OPCode::OP_RETURN);
+    return;
+  }
   for (const auto& stmt : statements_) {
-    program.addFunction(name_->lexeme(), args_.size());
     static_cast<ASTNode*>(stmt.get())->self(program);
   }
 }

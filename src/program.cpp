@@ -109,6 +109,7 @@ void Program::FunctionRegistry::registerFunction(std::string name, size_t args,
   pc_name_.emplace(std::make_pair(pc, name));
   metadata_.emplace(
       std::make_pair(name, Program::FunctionMetadata{name, pc, args}));
+  STARTEAR_ASSERT(pc_name_.size() == metadata_.size());
 }
 
 bool Program::validOperandSize(OPCode code, size_t operand_size) {

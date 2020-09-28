@@ -30,6 +30,18 @@
 #include <iostream>
 
 namespace Startear {
+
+VMImpl::VMImpl(Program& program) : program_(program) {
+  auto main_entry_info =
+      program_.functionRegistry().findByName(startup_entry.data());
+  if (!main_entry_info.has_value()) {
+    std::cerr << "Failed to load `main` function" << std::endl;
+    NOT_REACHED;
+  }
+  pc_ = main_entry_info->get().pc_;
+  pushFrame();  // Main Frame
+}
+
 void VMImpl::start() {
   auto instr_entry = program_.fetchInst(pc_);
 
@@ -37,6 +49,7 @@ void VMImpl::start() {
     const auto& instr = instr_entry.value();
     auto opcode = instr.get().opcode();
     const auto& operand_ptrs = instr.get().operandsPointer();
+
     switch (opcode) {
       case OPCode::OP_PRINT: {
         STARTEAR_ASSERT(operand_ptrs.size() == 1);
@@ -83,20 +96,15 @@ void VMImpl::start() {
         break;
       }
       case OPCode::OP_PUSH_FRAME: {
-        STARTEAR_ASSERT(operand_ptrs.size() == 1);
-        auto data_entry = program_.fetchValue(operand_ptrs[0]);
-        if (data_entry) {
-          STARTEAR_ASSERT(data_entry->category() == Value::Category::Literal);
-          pushFrame(static_cast<size_t>(*data_entry->getDouble()));
-        } else {
-          NOT_REACHED;
-        }
+        STARTEAR_ASSERT(operand_ptrs.size() == 0);
+        pushFrame();
         break;
       }
       case OPCode::OP_RETURN: {
         auto return_pc = frame_.top().return_pc_;
         popFrame();
         pc_ = return_pc;
+        break;
       }
       case OPCode::OP_CALL: {
         STARTEAR_ASSERT(operand_ptrs.size() == 1);
@@ -115,12 +123,24 @@ void VMImpl::start() {
             state_ = VMState::TerminatedWithError;
             return;
           }
-          frame_.top().return_pc_ = pc_ + 1;
+
+          Frame next_frame;
+          next_frame.return_pc_ = pc_ + 1;
+
+          // Extract stack value from current frame to next one.
+          for (auto i = 0; i < func_entry->get().args_; ++i) {
+            auto current_stack_top = popStack();
+            next_frame.stack_.push(current_stack_top);
+          }
+
           pc_ = func_entry->get().pc_;
+          frame_.emplace(next_frame);
         }
+        break;
       }
       default:
-        std::cerr << fmt::format("{} is unsupported instruction", opcode)
+        std::cerr << fmt::format("{} is unsupported instruction",
+                                 opcodeToString(opcode))
                   << std::endl;
         state_ = VMState::TerminatedWithError;
         return;

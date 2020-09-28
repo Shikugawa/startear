@@ -27,20 +27,32 @@
 #define STARTEAR_ALL_VM_IMPL_H
 
 #include <stack>
+#include <string_view>
 
 #include "opcode.h"
 #include "vm.h"
 
 namespace Startear {
+namespace {
+static constexpr std::string_view startup_entry = "main";
+}
+
 class VMImpl : public VM {
  public:
-  VMImpl(Program& program) : program_(program) {}
+  VMImpl(Program& program);
 
   // VM
   void incPc() override { ++pc_; }
-  void pushStack(Value v) override { frame_.top().stack_.push(v); }
-  Value getStackTop() { return frame_.top().stack_.top(); }
+  void pushStack(Value v) override {
+    STARTEAR_ASSERT(frame_.size() != 0);
+    frame_.top().stack_.push(v);
+  }
+  Value getStackTop() {
+    STARTEAR_ASSERT(frame_.size() != 0);
+    return frame_.top().stack_.top();
+  }
   Value popStack() override {
+    STARTEAR_ASSERT(frame_.size() != 0);
     auto top = frame_.top().stack_.top();
     frame_.top().stack_.pop();
     return top;
@@ -52,9 +64,10 @@ class VMImpl : public VM {
     frame_.push(f);
   }
   void pushFrame() {
+    // Only to call at once.
     if (frame_.size() != 0) {
       state_ = VMState::TerminatedWithError;
-      std::cerr << "Failed to push frame without return program counter";
+      std::cerr << "Only to call push frame at once without return value";
       NOT_REACHED;
     }
     Frame f;

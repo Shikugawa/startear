@@ -277,16 +277,51 @@ TEST(VmTest, BasicTest) {
   program3.addInst(
       OPCode::OP_STORE_LOCAL,
       {std::make_pair(Value::Category::Variable, std::string("r"))});
-  //  program3.addInst(
-  //      OPCode::OP_PRINT_VARIABLE,
-  //      {std::make_pair(Value::Category::Variable, std::string("r"))});
   testing::internal::CaptureStdout();
   vm.restart(program3);
   EXPECT_EQ("56\n", testing::internal::GetCapturedStdout());
   disassemble(program3);
 }
 
-TEST(Integration, BasicCalc) {
+class VMExecIntegration : public testing::Test {
+ public:
+  void prepare(std::string& code, std::function<void(Program&)> program_eval,
+               bool dbg) {
+    Tokenizer t(code);
+    Parser p(t.scanTokens());
+
+    auto ast = p.parse();
+    StartearVMInstructionEmitter emitter;
+    ast->accept(emitter);
+
+    auto program = emitter.emit();
+    program_eval(program);
+
+    VMImpl vm(program);
+
+    if (dbg) {
+      ASTPrintVisitor v;
+      ast->accept(v);
+      disassemble(program);
+    }
+
+    vm.start();
+  }
+};
+
+TEST_F(VMExecIntegration, NoStatement) {
+  std::string code = R"(
+fn main() {}
+)";
+  prepare(
+      code,
+      [&](Program& program) {
+        EXPECT_EQ(program.instructions()[0].opcode(), OPCode::OP_RETURN);
+      },
+      true);
+}
+
+TEST_F(VMExecIntegration, BasicCalc) {
   std::string code = R"(
 fn main() {
     // test comment
@@ -295,20 +330,22 @@ fn main() {
     let c = a + b;
 }
 )";
-  Tokenizer t(code);
-  Parser p(t.scanTokens());
-  auto ast = p.parse();
-  ASTPrintVisitor v;
-  ast->accept(v);
-  StartearVMInstructionEmitter emitter;
-  ast->accept(emitter);
-  auto program = emitter.emit();
-  VMImpl vm(program);
-  disassemble(program);
-  //    vm.start();
+  prepare(
+      code,
+      [&](Program& program) {
+        EXPECT_EQ(program.instructions()[0].opcode(), OPCode::OP_PUSH);
+        EXPECT_EQ(program.instructions()[1].opcode(), OPCode::OP_STORE_LOCAL);
+        EXPECT_EQ(program.instructions()[2].opcode(), OPCode::OP_PUSH);
+        EXPECT_EQ(program.instructions()[3].opcode(), OPCode::OP_STORE_LOCAL);
+        EXPECT_EQ(program.instructions()[4].opcode(), OPCode::OP_LOAD_LOCAL);
+        EXPECT_EQ(program.instructions()[5].opcode(), OPCode::OP_LOAD_LOCAL);
+        EXPECT_EQ(program.instructions()[6].opcode(), OPCode::OP_ADD);
+        EXPECT_EQ(program.instructions()[7].opcode(), OPCode::OP_STORE_LOCAL);
+      },
+      true);
 }
 
-TEST(Integration, FuncTest) {
+TEST_F(VMExecIntegration, FuncCall) {
   std::string code = R"(
 fn sub(arg1, arg2) {
     return 3;
@@ -318,15 +355,18 @@ fn main() {
     let b = sub(9, 10);
 }
 )";
-  Tokenizer t(code);
-  Parser p(t.scanTokens());
-  auto ast = p.parse();
-  ASTPrintVisitor v;
-  ast->accept(v);
-  StartearVMInstructionEmitter emitter;
-  ast->accept(emitter);
-  auto program = emitter.emit();
-  disassemble(program);
+  prepare(
+      code,
+      [&](Program& program) {
+        EXPECT_EQ(program.instructions()[0].opcode(), OPCode::OP_PUSH);
+        EXPECT_EQ(program.instructions()[1].opcode(), OPCode::OP_RETURN);
+        // start function call
+        EXPECT_EQ(program.instructions()[2].opcode(), OPCode::OP_PUSH);
+        EXPECT_EQ(program.instructions()[3].opcode(), OPCode::OP_PUSH);
+        EXPECT_EQ(program.instructions()[4].opcode(), OPCode::OP_CALL);
+        EXPECT_EQ(program.instructions()[5].opcode(), OPCode::OP_STORE_LOCAL);
+      },
+      true);
 }
 
 }  // namespace

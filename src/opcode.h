@@ -78,6 +78,8 @@ enum class OPCode : size_t {
   OP_RETURN,
 };
 
+std::string opcodeToString(OPCode op);
+
 }  // namespace Startear
 
 #endif  // STARTEAR_ALL_OPCODE_H

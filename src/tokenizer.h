@@ -35,7 +35,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "opcode.h"
 #include "startear_assert.h"
 
 namespace Startear {
