@@ -82,7 +82,6 @@ class Instruction {
   template <class It>
   Instruction(OPCode code, It begin, It end)
       : code_(code), operands_ptr_(begin, end) {
-    //    std::cout << operands_ptr_[0] << std::endl;
   }
 
   const OPCode opcode() const { return code_; }

@@ -59,7 +59,11 @@ void disassemble(Program& p) {
         SET_INSTRUCTION("OP_POP_FRAME")
       case OPCode::OP_RETURN:
         SET_INSTRUCTION("OP_RETURN");
-        std::cout << fmt::format("{}", instr_str) << std::endl;
+        std::cout << fmt::format("{}", instr_str);
+        if (func_name.has_value()) {
+          std::cout << fmt::format(" <- {}", func_name.value().get().name_);
+        }
+        std::cout << std::endl;
         break;
       case OPCode::OP_LOAD_LOCAL:
         SET_INSTRUCTION("OP_LOAD_LOCAL");
@@ -98,10 +102,9 @@ void disassemble(Program& p) {
             default:
               NOT_REACHED;
           }
-          //          if (func_name.has_value()) {
-          //            std::cout << fmt::format(" <- {}",
-          //            func_name.value().get().name_);
-          //          }
+          if (func_name.has_value()) {
+            std::cout << fmt::format(" <- {}", func_name.value().get().name_);
+          }
           std::cout << std::endl;
         }
         break;
