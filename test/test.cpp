@@ -367,7 +367,8 @@ fn main() {
 TEST_F(VMExecIntegration, FuncCall) {
   std::string code = R"(
 fn sub(arg1, arg2) {
-    return 3;
+    let q = arg1 + arg2;
+    return q;
 }
 
 fn main() {
@@ -377,13 +378,17 @@ fn main() {
   prepare(
       code,
       [&](Program& program) {
-        EXPECT_EQ(program.instructions()[0].opcode(), OPCode::OP_PUSH);
-        EXPECT_EQ(program.instructions()[1].opcode(), OPCode::OP_RETURN);
+        EXPECT_EQ(program.instructions()[0].opcode(), OPCode::OP_LOAD_LOCAL);
+        EXPECT_EQ(program.instructions()[1].opcode(), OPCode::OP_LOAD_LOCAL);
         // start function call
-        EXPECT_EQ(program.instructions()[2].opcode(), OPCode::OP_PUSH);
-        EXPECT_EQ(program.instructions()[3].opcode(), OPCode::OP_PUSH);
-        EXPECT_EQ(program.instructions()[4].opcode(), OPCode::OP_CALL);
-        EXPECT_EQ(program.instructions()[5].opcode(), OPCode::OP_STORE_LOCAL);
+        EXPECT_EQ(program.instructions()[2].opcode(), OPCode::OP_ADD);
+        EXPECT_EQ(program.instructions()[3].opcode(), OPCode::OP_STORE_LOCAL);
+        EXPECT_EQ(program.instructions()[4].opcode(), OPCode::OP_LOAD_LOCAL);
+        EXPECT_EQ(program.instructions()[5].opcode(), OPCode::OP_RETURN);
+        EXPECT_EQ(program.instructions()[6].opcode(), OPCode::OP_PUSH);
+        EXPECT_EQ(program.instructions()[7].opcode(), OPCode::OP_PUSH);
+        EXPECT_EQ(program.instructions()[8].opcode(), OPCode::OP_CALL);
+        EXPECT_EQ(program.instructions()[9].opcode(), OPCode::OP_STORE_LOCAL);
       },
       [&](VMImpl& vm) {
         const auto& top_frame = vm.peekFrame();
@@ -392,7 +397,7 @@ fn main() {
         ASSERT_EQ(top_frame.lv_table_.size(), 1);
         const auto& entry_b = top_frame.lv_table_.find("b");
         ASSERT_TRUE(entry_b != top_frame.lv_table_.end());
-        ASSERT_EQ(entry_b->second.getDouble().value(), 3.0);
+        ASSERT_EQ(entry_b->second.getDouble().value(), 19.0);
       },
       true);
 }

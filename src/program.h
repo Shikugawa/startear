@@ -121,7 +121,7 @@ class Program {
   struct FunctionMetadata {
     std::string name_;
     size_t pc_;    // Program counter of specified function.
-    size_t args_;  // The number of arguments.
+    std::vector<size_t> args_; // The pointers to argument names for temporal use.
   };
 
   struct FunctionRegistry {
@@ -129,7 +129,7 @@ class Program {
     findByProgramCounter(size_t line) const;
     std::optional<std::reference_wrapper<const FunctionMetadata>> findByName(
         std::string name) const;
-    void registerFunction(std::string name, size_t args, size_t pc);
+    void registerFunction(std::string name, std::vector<size_t>& args, size_t pc);
 
    private:
     // TODO: replace flat hash map
@@ -143,7 +143,7 @@ class Program {
   // Register symbol name and current top instruction pointer.
   // This function is used if you'd like to create function from bytecode
   // generation AST visitor.
-  void addFunction(std::string name, size_t args);
+  void addFunction(std::string name, std::vector<size_t>& args);
   const FunctionRegistry& functionRegistry() const {
     return registered_function_;
   }

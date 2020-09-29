@@ -81,7 +81,7 @@ size_t Program::addValue(Value v) {
   return values_.size() - 1;
 }
 
-void Program::addFunction(std::string name, size_t args) {
+void Program::addFunction(std::string name, std::vector<size_t>& args) {
   auto current_top = instructions_.size();
   registered_function_.registerFunction(name, args, current_top);
 }
@@ -104,7 +104,7 @@ Program::FunctionRegistry::findByName(std::string name) const {
   return std::reference_wrapper(itr2->second);
 }
 
-void Program::FunctionRegistry::registerFunction(std::string name, size_t args,
+void Program::FunctionRegistry::registerFunction(std::string name, std::vector<size_t>& args,
                                                  size_t pc) {
   pc_name_.emplace(std::make_pair(pc, name));
   metadata_.emplace(

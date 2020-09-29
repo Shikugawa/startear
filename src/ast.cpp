@@ -273,7 +273,13 @@ void FunctionDeclaration::accept(IASTNodeVisitor& visitor) {
 }
 
 void FunctionDeclaration::self(Program& program) {
-  program.addFunction(name_->lexeme(), args_.size());
+  std::vector<size_t> argname_ptrs;
+  for (const auto& arg: args_) {
+    Value v(Value::Category::Variable, arg->lexeme());
+    const auto v_ptr = program.addValue(v);
+    argname_ptrs.emplace_back(v_ptr);
+  }
+  program.addFunction(name_->lexeme(), argname_ptrs);
   // Just to add return instruction when there is no statement in this function.
   if (statements_.size() == 0) {
     program.addInst(OPCode::OP_RETURN);

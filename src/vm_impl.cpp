@@ -145,9 +145,24 @@ void VMImpl::start() {
           next_frame.return_pc_ = pc_ + 1;
 
           // Extract stack value from current frame to next one.
-          for (auto i = 0; i < func_entry->get().args_; ++i) {
+          for (int32_t /* not to be inferenced as unsigned integer */ i =
+                   func_entry->get().args_.size() - 1;
+               i >= 0; --i) {
             auto current_stack_top = popStack();
             next_frame.stack_.push(current_stack_top);
+            auto arg_name_entry =
+                program_.fetchValue(func_entry->get().args_[i]);
+            if (!arg_name_entry.has_value()) {
+              std::cerr << "The variable name of argument is not registered on "
+                           "program data region"
+                        << std::endl;
+              NOT_REACHED;
+            }
+            if (!arg_name_entry->getString().has_value()) {
+              NOT_REACHED;
+            }
+            next_frame.lv_table_.emplace(*arg_name_entry->getString(),
+                                         current_stack_top);
           }
 
           pc_ = func_entry->get().pc_;
