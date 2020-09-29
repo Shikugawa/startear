@@ -133,6 +133,19 @@ TEST_F(TokenizerTest, ForTest) {
   reset();
 }
 
+TEST_F(TokenizerTest, IfTest) {
+  Startear::Tokenizer tokenizer("if (args == 0) {}");
+  result_ = tokenizer.scanTokens();
+  checkToken(TokenType::IF);
+  checkToken(TokenType::LEFT_PAREN);
+  checkToken(TokenType::IDENTIFIER);
+  checkToken(TokenType::EQUAL_EQUAL);
+  checkToken(TokenType::NUMBER, "0");
+  checkToken(TokenType::RIGHT_PAREN);
+  checkToken(TokenType::LEFT_BRACE);
+  checkToken(TokenType::RIGHT_BRACE);
+}
+
 TEST_F(TokenizerTest, CodeBlockTest) {
   std::string code = R"(
 fn main(arg1, arg2) {
@@ -285,8 +298,8 @@ TEST(VmTest, BasicTest) {
 
 class VMExecIntegration : public testing::Test {
  public:
-  void prepare(std::string& code, std::function<void(Program&)> program_eval, std::function<void(VMImpl&)> vm_eval,
-               bool dbg) {
+  void prepare(std::string& code, std::function<void(Program&)> program_eval,
+               std::function<void(VMImpl&)> vm_eval, bool dbg) {
     Tokenizer t(code);
     Parser p(t.scanTokens());
 
@@ -319,8 +332,7 @@ fn main() {}
       [&](Program& program) {
         EXPECT_EQ(program.instructions()[0].opcode(), OPCode::OP_RETURN);
       },
-      [&](VMImpl& vm) {},
-      true);
+      [&](VMImpl& vm) {}, true);
 }
 
 TEST_F(VMExecIntegration, BasicCalc) {

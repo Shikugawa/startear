@@ -99,6 +99,8 @@ void Tokenizer::scanToken() {
       if (parseReservedWord(TokenType::FUN)) break;
     case 'r':
       if (parseReservedWord(TokenType::RETURN)) break;
+    case 'i':
+      if (parseReservedWord(TokenType::IF)) break;
     default:
       if (isDigit(c)) {
         parseNumber();
