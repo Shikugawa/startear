@@ -329,6 +329,23 @@ class FunctionDeclaration : public ASTNode {
 
 using FunctionDeclarationPtr = std::unique_ptr<FunctionDeclaration>;
 
+class IfStatement : public ASTNode {
+public:
+  IfStatement(EqualityExpressionPtr eql_expr, std::vector<ASTNodePtr>& statements)
+    : eql_expr_(std::move(eql_expr)), statements_(std::move(statements)) {}
+
+  // ASTNode
+  void accept(IASTNodeVisitor& visitor) override;
+  void self(Program& program) override;
+  std::string toString() override;
+
+public:
+  EqualityExpressionPtr eql_expr_;
+  std::vector<ASTNodePtr> statements_;
+};
+
+using IfStatementPtr = std::unique_ptr<IfStatement>;
+
 class ProgramDeclaration : public ASTNode {
  public:
   ProgramDeclaration(std::vector<LetStatementPtr>& global_variable,

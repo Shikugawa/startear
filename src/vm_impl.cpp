@@ -217,7 +217,12 @@ std::optional<Value> VMImpl::lookupLocalVariableTable(size_t ptr) {
 }
 
 void VMImpl::saveLocalVariableTable(std::string name, Value& v) {
-  frame_.top().lv_table_.emplace(name, v);
+  auto entry = frame_.top().lv_table_.find(name);
+  if (entry != frame_.top().lv_table_.end()) {
+    entry->second = v;
+  } else {
+    frame_.top().lv_table_.emplace(name, v);
+  }
 }
 
 void VMImpl::print(Value& v) {

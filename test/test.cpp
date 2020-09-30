@@ -201,6 +201,13 @@ TEST_F(ParserTest, BasicTest) {
   run("32 + 21 / 21", "(+ 32 (/ 21 21))\n");
   run("(32 + 21) / 21", "(/ (+ 32 21) 21)\n");
   run("(32 / (32 + 32)) / 32", "(/ (/ 32 (+ 32 32)) 32)\n");
+  run("0 == 3", "(== 0 3)\n");
+    run("0 >= 3", "(>= 0 3)\n");
+    run("0 <= 3", "(<= 0 3)\n");
+    run("0 != 3", "(!= 0 3)\n");
+    run("0 < 3", "(< 0 3)\n");
+    run("0 > 3", "(> 0 3)\n");
+    run("0 == (3 == 4)", "(== 0 (== 3 4))\n");
 }
 
 TEST_F(ParserTest, FuncTest) {
@@ -220,6 +227,18 @@ main2 (arg) ->
 
 )";
   run(code, expected);
+}
+
+TEST_F(ParserTest, IfTest) {
+  std::string code = R"(
+fn main() {
+  let a = 0;
+  if (a == 0) {
+    a = 3;
+  }
+}
+)";
+  run(code, "");
 }
 
 class EmitterTest : public testing::Test {
@@ -374,6 +393,33 @@ fn main() {
         ASSERT_EQ(entry_c->second.getDouble().value(), 7.0);
       },
       true);
+}
+
+TEST_F(VMExecIntegration, Substitution) {
+    std::string code = R"(
+fn main() {
+    let a = 3;
+    a = 4;
+}
+)";
+    prepare(
+            code,
+            [&](Program& program) {
+              EXPECT_EQ(program.instructions()[0].opcode(), OPCode::OP_PUSH);
+              EXPECT_EQ(program.instructions()[1].opcode(), OPCode::OP_STORE_LOCAL);
+              EXPECT_EQ(program.instructions()[2].opcode(), OPCode::OP_PUSH);
+              EXPECT_EQ(program.instructions()[3].opcode(), OPCode::OP_STORE_LOCAL);
+            },
+            [&](VMImpl& vm) {
+              const auto& top_frame = vm.peekFrame();
+              // Variable State
+              ASSERT_EQ(top_frame.lv_table_.size(), 1);
+
+              const auto& entry_a = top_frame.lv_table_.find("a");
+              ASSERT_TRUE(entry_a != top_frame.lv_table_.end());
+              ASSERT_EQ(entry_a->second.getDouble().value(), 4.0);
+            },
+            true);
 }
 
 TEST_F(VMExecIntegration, FuncCall) {

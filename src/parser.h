@@ -46,10 +46,11 @@ class Parser {
   MultiplicationExpressionPtr multiplicationExpression();
   UnaryExpressionPtr unaryExpression();
   PrimaryExpressionPtr primaryExpression();
-  LetStatementPtr letStatement();
+  LetStatementPtr letStatement(bool substitution = false);
   FunctionDeclarationPtr functionDeclaration();
   ProgramDeclarationPtr programDeclaration();
   FunctionCallPtr functionCall();
+  IfStatementPtr ifStatement();
   ReturnDeclarationPtr returnDeclaration();
 
   bool match(TokenType expected) { return match(expected, 0); }

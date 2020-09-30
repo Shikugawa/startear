@@ -74,7 +74,6 @@ ComparisonExpressionPtr Parser::comparisonExpression() {
     auto& root_token = tokens_[current_];
     forward();
     auto right = additionExpression();
-
     if (cmp == nullptr) {
       cmp = std::make_unique<ComparisonExpression>(
           std::make_unique<Compare>(root_token), std::move(left),
@@ -86,7 +85,6 @@ ComparisonExpressionPtr Parser::comparisonExpression() {
       cmp = std::move(new_cmp);
     }
   }
-
   if (cmp == nullptr) {
     cmp = std::make_unique<ComparisonExpression>(std::move(left));
   }
@@ -185,8 +183,12 @@ PrimaryExpressionPtr Parser::primaryExpression() {
   return nullptr;
 }
 
-LetStatementPtr Parser::letStatement() {
-  forward();
+LetStatementPtr Parser::letStatement(bool substitution) {
+  // Not to pass `let` when passed statement is substitution.
+  if (!substitution) {
+    forward();
+  }
+
   if (!match(TokenType::IDENTIFIER)) {
     return nullptr;
   }
@@ -262,6 +264,61 @@ ReturnDeclarationPtr Parser::returnDeclaration() {
       std::make_unique<Normal>(return_value_token));
 }
 
+IfStatementPtr Parser::ifStatement() {
+  forward();
+  if (!match(TokenType::LEFT_PAREN)) {
+    // TODO: add line no
+    std::cerr << "Syntax Error" << std::endl;
+    NOT_REACHED;
+  }
+  forward();
+  auto eql_expr_ptr = equalityExpression();
+  if (!match(TokenType::RIGHT_PAREN)) {
+    std::cerr << "Syntax Error" << std::endl;
+    NOT_REACHED;
+  }
+  forward();
+  if (!match(TokenType::LEFT_BRACE)) {
+    std::cerr << "Syntax Error" << std::endl;
+    NOT_REACHED;
+  }
+  forward();
+  std::vector<ASTNodePtr> expressions;
+  while (!match(TokenType::RIGHT_BRACE)) {
+    if (match(TokenType::RIGHT_BRACE)) {
+      forward();
+      break;
+    }
+    ASTNodePtr current_stmt;
+    if (match(TokenType::VAR)) {
+      current_stmt = letStatement();
+    } else if (match(TokenType::COMMENT)) {
+      forward();
+      continue;
+    } else if (match(TokenType::IDENTIFIER)) {
+      current_stmt = functionCall();
+    } else if (match(TokenType::RETURN)) {
+      current_stmt = returnDeclaration();
+    } else {
+      NOT_REACHED;
+    }
+    if (!current_stmt) {
+      // TODO: line number
+      std::cerr << "Failed to parse" << std::endl;
+      return nullptr;
+    }
+    if (!match(TokenType::SEMICOLON)) {
+      std::cout << "Variable definition must be ended with semicolon"
+                << std::endl;
+      return nullptr;
+    }
+    forward();
+    expressions.emplace_back(std::move(current_stmt));
+  }
+  forward();
+  return std::make_unique<IfStatement>(std::move(eql_expr_ptr), expressions);
+}
+
 FunctionDeclarationPtr Parser::functionDeclaration() {
   forward();
   auto name_token = tokens_[current_];
@@ -311,10 +368,20 @@ FunctionDeclarationPtr Parser::functionDeclaration() {
       forward();
       continue;
     } else if (match(TokenType::IDENTIFIER)) {
-      current_stmt = functionCall();
+      if (match(TokenType::LEFT_PAREN, 1)) {
+        current_stmt = functionCall();
+      } else if (match(TokenType::EQUAL, 1)) {
+        current_stmt = letStatement(true);
+      } else {
+        NOT_REACHED;
+      }
     } else if (match(TokenType::RETURN)) {
       current_stmt = returnDeclaration();
+    } else if (match(TokenType::IF)) {
+      current_stmt = ifStatement();
     } else {
+      // TODO: Show line number
+      std::cerr << "Syntax Error" << std::endl;
       NOT_REACHED;
     }
     if (!current_stmt) {

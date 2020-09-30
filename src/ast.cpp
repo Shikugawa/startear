@@ -159,7 +159,7 @@ std::string ComparisonExpression::toString() {
   }
   if (add_left_expr_ != nullptr && right_expr_ != nullptr) {
     return fmt::format("({} {} {})", token_->lexeme(),
-                       cmp_left_expr_->toString(), right_expr_->toString());
+                       add_left_expr_->toString(), right_expr_->toString());
   }
   if (add_left_expr_ != nullptr) {
     return fmt::format("{}", add_left_expr_->toString());
@@ -333,6 +333,23 @@ std::string ReturnDeclaration::toString() {
         return fmt::format("return {}", token->lexeme());
       },
       token_);
+}
+
+void IfStatement::accept(IASTNodeVisitor &visitor) {
+  visitor.visit(*this);
+}
+
+void IfStatement::self(Program &program) {
+  Unimplemented();
+}
+
+std::string IfStatement::toString() {
+  std::string program;
+  program += fmt::format("if ({})\n", eql_expr_->toString());
+  for (const auto& stmt: statements_) {
+    program += fmt::format("\t{}\n", stmt->toString());
+  }
+  return program;
 }
 
 void ProgramDeclaration::accept(IASTNodeVisitor& visitor) {
