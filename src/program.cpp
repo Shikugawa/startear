@@ -104,33 +104,13 @@ Program::FunctionRegistry::findByName(std::string name) const {
   return std::reference_wrapper(itr2->second);
 }
 
-void Program::FunctionRegistry::registerFunction(std::string name, std::vector<size_t>& args,
+void Program::FunctionRegistry::registerFunction(std::string name,
+                                                 std::vector<size_t>& args,
                                                  size_t pc) {
   pc_name_.emplace(std::make_pair(pc, name));
   metadata_.emplace(
       std::make_pair(name, Program::FunctionMetadata{name, pc, args}));
   STARTEAR_ASSERT(pc_name_.size() == metadata_.size());
-}
-
-bool Program::validOperandSize(OPCode code, size_t operand_size) {
-  const auto expect_size = [&operand_size](size_t expected) {
-    return operand_size == expected;
-  };
-  switch (code) {
-    case OPCode::OP_PRINT:
-    case OPCode::OP_PUSH:
-    case OPCode::OP_STORE_LOCAL:
-    case OPCode::OP_LOAD_LOCAL:
-    case OPCode::OP_CALL:
-      return expect_size(1);
-    case OPCode::OP_ADD:
-    case OPCode::OP_RETURN:
-    case OPCode::OP_PUSH_FRAME:
-    case OPCode::OP_POP_FRAME:
-      return expect_size(0);
-    default:
-      return false;
-  }
 }
 
 }  // namespace Startear

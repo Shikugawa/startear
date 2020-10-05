@@ -285,10 +285,6 @@ IfStatementPtr Parser::ifStatement() {
   forward();
   std::vector<ASTNodePtr> expressions;
   while (!match(TokenType::RIGHT_BRACE)) {
-    if (match(TokenType::RIGHT_BRACE)) {
-      forward();
-      break;
-    }
     ASTNodePtr current_stmt;
     if (match(TokenType::VAR)) {
       current_stmt = letStatement();
@@ -296,7 +292,13 @@ IfStatementPtr Parser::ifStatement() {
       forward();
       continue;
     } else if (match(TokenType::IDENTIFIER)) {
-      current_stmt = functionCall();
+      if (match(TokenType::LEFT_PAREN, 1)) {
+        current_stmt = functionCall();
+      } else if (match(TokenType::EQUAL, 1)) {
+        current_stmt = letStatement(true);
+      } else {
+        NOT_REACHED;
+      }
     } else if (match(TokenType::RETURN)) {
       current_stmt = returnDeclaration();
     } else {
@@ -361,6 +363,8 @@ FunctionDeclarationPtr Parser::functionDeclaration() {
       forward();
       break;
     }
+    bool semicolon_required = true;  // IF or FOR statement is not required to
+                                     // be ended with semicolon.
     ASTNodePtr current_stmt;
     if (match(TokenType::VAR)) {
       current_stmt = letStatement();
@@ -379,6 +383,7 @@ FunctionDeclarationPtr Parser::functionDeclaration() {
       current_stmt = returnDeclaration();
     } else if (match(TokenType::IF)) {
       current_stmt = ifStatement();
+      semicolon_required = false;
     } else {
       // TODO: Show line number
       std::cerr << "Syntax Error" << std::endl;
@@ -389,7 +394,7 @@ FunctionDeclarationPtr Parser::functionDeclaration() {
       std::cerr << "Failed to parse" << std::endl;
       return nullptr;
     }
-    if (!match(TokenType::SEMICOLON)) {
+    if (semicolon_required && !match(TokenType::SEMICOLON)) {
       std::cout << "Variable definition must be ended with semicolon"
                 << std::endl;
       return nullptr;

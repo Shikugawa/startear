@@ -48,8 +48,49 @@ std::string opcodeToString(OPCode op) {
       return "OP_POP_FRAME";
     case OPCode::OP_RETURN:
       return "OP_RETURN";
+    case OPCode::OP_EQUAL:
+      return "OP_EQUAL";
+    case OPCode::OP_BANG_EQUAL:
+      return "OP_BANG_EQUAL";
+    case OPCode::OP_LESS_EQUAL:
+      return "OP_LESS_EQUAL";
+    case OPCode::OP_GREATER_EQUAL:
+      return "OP_GREATER_EQUAL";
+    case OPCode::OP_LESS:
+      return "OP_LESS";
+    case OPCode::OP_GREATER:
+      return "OP_GREATER";
     default:
       return "";
+  }
+}
+
+bool validOperandSize(OPCode code, size_t operand_size) {
+  const auto expect_size = [&operand_size](size_t expected) {
+    return operand_size == expected;
+  };
+  switch (code) {
+    case OPCode::OP_PRINT:
+    case OPCode::OP_PUSH:
+    case OPCode::OP_STORE_LOCAL:
+    case OPCode::OP_LOAD_LOCAL:
+    case OPCode::OP_CALL:
+      return expect_size(1);
+    case OPCode::OP_ADD:
+    case OPCode::OP_EQUAL:
+    case OPCode::OP_BANG_EQUAL:
+    case OPCode::OP_LESS_EQUAL:
+    case OPCode::OP_GREATER_EQUAL:
+    case OPCode::OP_LESS:
+    case OPCode::OP_GREATER:
+    case OPCode::OP_RETURN:
+    case OPCode::OP_PUSH_FRAME:
+    case OPCode::OP_POP_FRAME:
+      return expect_size(0);
+    case OPCode::OP_BRANCH:
+      return expect_size(2);
+    default:
+      return false;
   }
 }
 

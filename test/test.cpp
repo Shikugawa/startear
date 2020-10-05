@@ -202,12 +202,12 @@ TEST_F(ParserTest, BasicTest) {
   run("(32 + 21) / 21", "(/ (+ 32 21) 21)\n");
   run("(32 / (32 + 32)) / 32", "(/ (/ 32 (+ 32 32)) 32)\n");
   run("0 == 3", "(== 0 3)\n");
-    run("0 >= 3", "(>= 0 3)\n");
-    run("0 <= 3", "(<= 0 3)\n");
-    run("0 != 3", "(!= 0 3)\n");
-    run("0 < 3", "(< 0 3)\n");
-    run("0 > 3", "(> 0 3)\n");
-    run("0 == (3 == 4)", "(== 0 (== 3 4))\n");
+  run("0 >= 3", "(>= 0 3)\n");
+  run("0 <= 3", "(<= 0 3)\n");
+  run("0 != 3", "(!= 0 3)\n");
+  run("0 < 3", "(< 0 3)\n");
+  run("0 > 3", "(> 0 3)\n");
+  run("0 == (3 == 4)", "(== 0 (== 3 4))\n");
 }
 
 TEST_F(ParserTest, FuncTest) {
@@ -277,10 +277,85 @@ TEST_F(EmitterTest, StoreVariable) {
   ASSERT_EQ(program.fetchInst(1)->get().operandsPointer()[0], 1);
   ASSERT_EQ(program.fetchInst(2)->get().opcode(), OPCode::OP_ADD);
   ASSERT_EQ(program.fetchInst(3)->get().opcode(), OPCode::OP_STORE_LOCAL);
-
-  run("let b = a + 2");
-  program = emitter_.emit();
   disassemble(program);
+}
+
+TEST_F(EmitterTest, StoreVariable2) {
+    run("let b = a + 2");
+    auto program = emitter_.emit();
+    ASSERT_EQ(program.fetchInst(0)->get().opcode(), OPCode::OP_LOAD_LOCAL);
+    ASSERT_EQ(program.fetchInst(0)->get().operandsPointer()[0], 0);
+    ASSERT_EQ(program.fetchInst(1)->get().opcode(), OPCode::OP_PUSH);
+    ASSERT_EQ(program.fetchInst(1)->get().operandsPointer()[0], 1);
+    ASSERT_EQ(program.fetchInst(2)->get().opcode(), OPCode::OP_ADD);
+    ASSERT_EQ(program.fetchInst(3)->get().opcode(), OPCode::OP_STORE_LOCAL);
+    disassemble(program);
+}
+
+TEST_F(EmitterTest, Compare) {
+  run("3 == 2");
+  auto program = emitter_.emit();
+  ASSERT_EQ(program.fetchInst(0)->get().opcode(), OPCode::OP_PUSH);
+  ASSERT_EQ(program.fetchInst(0)->get().operandsPointer()[0], 0);
+  ASSERT_EQ(program.fetchInst(1)->get().opcode(), OPCode::OP_PUSH);
+  ASSERT_EQ(program.fetchInst(1)->get().operandsPointer()[0], 1);
+  ASSERT_EQ(program.fetchInst(2)->get().opcode(), OPCode::OP_EQUAL);
+  disassemble(program);
+}
+
+TEST_F(EmitterTest, Compare2) {
+  run("3 != 2");
+  auto program2 = emitter_.emit();
+  ASSERT_EQ(program2.fetchInst(0)->get().opcode(), OPCode::OP_PUSH);
+  ASSERT_EQ(program2.fetchInst(0)->get().operandsPointer()[0], 0);
+  ASSERT_EQ(program2.fetchInst(1)->get().opcode(), OPCode::OP_PUSH);
+  ASSERT_EQ(program2.fetchInst(1)->get().operandsPointer()[0], 1);
+  ASSERT_EQ(program2.fetchInst(2)->get().opcode(), OPCode::OP_BANG_EQUAL);
+  disassemble(program2);
+}
+
+TEST_F(EmitterTest, Compare3) {
+  run("3 > 2");
+  auto program2 = emitter_.emit();
+  ASSERT_EQ(program2.fetchInst(0)->get().opcode(), OPCode::OP_PUSH);
+  ASSERT_EQ(program2.fetchInst(0)->get().operandsPointer()[0], 0);
+  ASSERT_EQ(program2.fetchInst(1)->get().opcode(), OPCode::OP_PUSH);
+  ASSERT_EQ(program2.fetchInst(1)->get().operandsPointer()[0], 1);
+  ASSERT_EQ(program2.fetchInst(2)->get().opcode(), OPCode::OP_GREATER);
+  disassemble(program2);
+}
+
+TEST_F(EmitterTest, Compare4) {
+  run("3 >= 2");
+  auto program2 = emitter_.emit();
+  ASSERT_EQ(program2.fetchInst(0)->get().opcode(), OPCode::OP_PUSH);
+  ASSERT_EQ(program2.fetchInst(0)->get().operandsPointer()[0], 0);
+  ASSERT_EQ(program2.fetchInst(1)->get().opcode(), OPCode::OP_PUSH);
+  ASSERT_EQ(program2.fetchInst(1)->get().operandsPointer()[0], 1);
+  ASSERT_EQ(program2.fetchInst(2)->get().opcode(), OPCode::OP_GREATER_EQUAL);
+  disassemble(program2);
+}
+
+TEST_F(EmitterTest, Compare5) {
+  run("3 < 2");
+  auto program2 = emitter_.emit();
+  ASSERT_EQ(program2.fetchInst(0)->get().opcode(), OPCode::OP_PUSH);
+  ASSERT_EQ(program2.fetchInst(0)->get().operandsPointer()[0], 0);
+  ASSERT_EQ(program2.fetchInst(1)->get().opcode(), OPCode::OP_PUSH);
+  ASSERT_EQ(program2.fetchInst(1)->get().operandsPointer()[0], 1);
+  ASSERT_EQ(program2.fetchInst(2)->get().opcode(), OPCode::OP_LESS);
+  disassemble(program2);
+}
+
+TEST_F(EmitterTest, Compare6) {
+  run("3 <= 2");
+  auto program2 = emitter_.emit();
+  ASSERT_EQ(program2.fetchInst(0)->get().opcode(), OPCode::OP_PUSH);
+  ASSERT_EQ(program2.fetchInst(0)->get().operandsPointer()[0], 0);
+  ASSERT_EQ(program2.fetchInst(1)->get().opcode(), OPCode::OP_PUSH);
+  ASSERT_EQ(program2.fetchInst(1)->get().operandsPointer()[0], 1);
+  ASSERT_EQ(program2.fetchInst(2)->get().opcode(), OPCode::OP_LESS_EQUAL);
+  disassemble(program2);
 }
 
 TEST(VmTest, BasicTest) {
@@ -396,30 +471,63 @@ fn main() {
 }
 
 TEST_F(VMExecIntegration, Substitution) {
-    std::string code = R"(
+  std::string code = R"(
 fn main() {
     let a = 3;
     a = 4;
 }
 )";
-    prepare(
-            code,
-            [&](Program& program) {
-              EXPECT_EQ(program.instructions()[0].opcode(), OPCode::OP_PUSH);
-              EXPECT_EQ(program.instructions()[1].opcode(), OPCode::OP_STORE_LOCAL);
-              EXPECT_EQ(program.instructions()[2].opcode(), OPCode::OP_PUSH);
-              EXPECT_EQ(program.instructions()[3].opcode(), OPCode::OP_STORE_LOCAL);
-            },
-            [&](VMImpl& vm) {
-              const auto& top_frame = vm.peekFrame();
-              // Variable State
-              ASSERT_EQ(top_frame.lv_table_.size(), 1);
+  prepare(
+      code,
+      [&](Program& program) {
+        EXPECT_EQ(program.instructions()[0].opcode(), OPCode::OP_PUSH);
+        EXPECT_EQ(program.instructions()[1].opcode(), OPCode::OP_STORE_LOCAL);
+        EXPECT_EQ(program.instructions()[2].opcode(), OPCode::OP_PUSH);
+        EXPECT_EQ(program.instructions()[3].opcode(), OPCode::OP_STORE_LOCAL);
+      },
+      [&](VMImpl& vm) {
+        const auto& top_frame = vm.peekFrame();
+        // Variable State
+        ASSERT_EQ(top_frame.lv_table_.size(), 1);
 
-              const auto& entry_a = top_frame.lv_table_.find("a");
-              ASSERT_TRUE(entry_a != top_frame.lv_table_.end());
-              ASSERT_EQ(entry_a->second.getDouble().value(), 4.0);
-            },
-            true);
+        const auto& entry_a = top_frame.lv_table_.find("a");
+        ASSERT_TRUE(entry_a != top_frame.lv_table_.end());
+        ASSERT_EQ(entry_a->second.getDouble().value(), 4.0);
+      },
+      true);
+}
+
+TEST_F(VMExecIntegration, IfAndSubstitution) {
+  std::string code = R"(
+fn main() {
+    let a = 3;
+    if (a == 3) {
+      a = 4;
+    }
+}
+)";
+  prepare(
+      code,
+      [&](Program& program) {
+        //              EXPECT_EQ(program.instructions()[0].opcode(),
+        //              OPCode::OP_PUSH);
+        //              EXPECT_EQ(program.instructions()[1].opcode(),
+        //              OPCode::OP_STORE_LOCAL);
+        //              EXPECT_EQ(program.instructions()[2].opcode(),
+        //              OPCode::OP_PUSH);
+        //              EXPECT_EQ(program.instructions()[3].opcode(),
+        //              OPCode::OP_STORE_LOCAL);
+      },
+      [&](VMImpl& vm) {
+        const auto& top_frame = vm.peekFrame();
+        // Variable State
+        ASSERT_EQ(top_frame.lv_table_.size(), 1);
+
+        const auto& entry_a = top_frame.lv_table_.find("a");
+        ASSERT_TRUE(entry_a != top_frame.lv_table_.end());
+        ASSERT_EQ(entry_a->second.getDouble().value(), 4.0);
+      },
+      true);
 }
 
 TEST_F(VMExecIntegration, FuncCall) {

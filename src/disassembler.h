@@ -53,6 +53,18 @@ void disassemble(Program& p) {
     switch (instr_entry->get().opcode()) {
       case OPCode::OP_ADD:
         instr_str = "OP_ADD";
+      case OPCode::OP_EQUAL:
+        SET_INSTRUCTION("OP_EQUAL");
+      case OPCode::OP_BANG_EQUAL:
+        SET_INSTRUCTION("OP_BANG_EQUAL");
+      case OPCode::OP_LESS_EQUAL:
+        SET_INSTRUCTION("OP_LESS_EQUAL");
+      case OPCode::OP_GREATER_EQUAL:
+        SET_INSTRUCTION("OP_GREATER_EQUAL");
+      case OPCode::OP_LESS:
+        SET_INSTRUCTION("OP_LESS");
+      case OPCode::OP_GREATER:
+        SET_INSTRUCTION("OP_GREATER");
       case OPCode::OP_PUSH_FRAME:
         SET_INSTRUCTION("OP_PUSH_FRAME");
       case OPCode::OP_POP_FRAME:
@@ -68,7 +80,7 @@ void disassemble(Program& p) {
       case OPCode::OP_LOAD_LOCAL:
         SET_INSTRUCTION("OP_LOAD_LOCAL");
       case OPCode::OP_CALL:
-        SET_INSTRUCTION("OP_CALL")
+        SET_INSTRUCTION("OP_CALL");
       case OPCode::OP_STORE_LOCAL: {
         SET_INSTRUCTION("OP_STORE_LOCAL");
         auto operand_ptrs = instr_entry->get().operandsPointer();

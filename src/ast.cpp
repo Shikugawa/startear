@@ -178,10 +178,15 @@ void ComparisonExpression::self(Program& program) {
   } else if (add_left_expr_ != nullptr && right_expr_ != nullptr) {
     static_cast<ASTNode*>(add_left_expr_.get())->self(program);
     static_cast<ASTNode*>(right_expr_.get())->self(program);
+    program.addInst(OPCode::OP_EQUAL,
+                    {std::make_pair(Value::Category::Literal, 3.0)});
   } else if (add_left_expr_ != nullptr) {
     static_cast<ASTNode*>(add_left_expr_.get())->self(program);
   } else {
     NOT_REACHED;
+  }
+  if (token_ != nullptr) {
+    program.addInst(opcodeFromToken(token_->type()));
   }
 }
 
@@ -215,6 +220,10 @@ void EqualityExpression::self(Program& program) {
     static_cast<ASTNode*>(cmp_left_expr_.get())->self(program);
   } else {
     NOT_REACHED;
+  }
+  if (token_ != nullptr) {
+    //    std::cout <<  << std::endl;
+    program.addInst(opcodeFromToken(token_->type()));
   }
 }
 
@@ -274,7 +283,7 @@ void FunctionDeclaration::accept(IASTNodeVisitor& visitor) {
 
 void FunctionDeclaration::self(Program& program) {
   std::vector<size_t> argname_ptrs;
-  for (const auto& arg: args_) {
+  for (const auto& arg : args_) {
     Value v(Value::Category::Variable, arg->lexeme());
     const auto v_ptr = program.addValue(v);
     argname_ptrs.emplace_back(v_ptr);
@@ -316,9 +325,10 @@ void ReturnDeclaration::accept(IASTNodeVisitor& visitor) {
 
 void ReturnDeclaration::self(Program& program) {
   if (std::holds_alternative<PrimaryPtr>(token_)) {  // Number
-    program.addInst(OPCode::OP_PUSH,
-                    {std::make_pair(Value::Category::Literal,
-                                    std::stod(std::get<PrimaryPtr>(token_)->lexeme()))});
+    program.addInst(
+        OPCode::OP_PUSH,
+        {std::make_pair(Value::Category::Literal,
+                        std::stod(std::get<PrimaryPtr>(token_)->lexeme()))});
   } else if (std::holds_alternative<NormalPtr>(token_)) {  // Identifier
     program.addInst(OPCode::OP_LOAD_LOCAL,
                     {std::make_pair(Value::Category::Variable,
@@ -335,18 +345,14 @@ std::string ReturnDeclaration::toString() {
       token_);
 }
 
-void IfStatement::accept(IASTNodeVisitor &visitor) {
-  visitor.visit(*this);
-}
+void IfStatement::accept(IASTNodeVisitor& visitor) { visitor.visit(*this); }
 
-void IfStatement::self(Program &program) {
-  Unimplemented();
-}
+void IfStatement::self(Program& program) { Unimplemented(); }
 
 std::string IfStatement::toString() {
   std::string program;
   program += fmt::format("if ({})\n", eql_expr_->toString());
-  for (const auto& stmt: statements_) {
+  for (const auto& stmt : statements_) {
     program += fmt::format("\t{}\n", stmt->toString());
   }
   return program;
@@ -384,6 +390,25 @@ std::string ProgramDeclaration::toString() {
     program += expr->toString();
   }
   return program;
+}
+
+OPCode opcodeFromToken(TokenType token) {
+  switch (token) {
+    case TokenType::EQUAL_EQUAL:
+      return OPCode::OP_EQUAL;
+    case TokenType::BANG_EQUAL:
+      return OPCode::OP_BANG_EQUAL;
+    case TokenType::LESS_EQUAL:
+      return OPCode::OP_LESS_EQUAL;
+    case TokenType::GREATER_EQUAL:
+      return OPCode::OP_GREATER_EQUAL;
+    case TokenType::LESS:
+      return OPCode::OP_LESS;
+    case TokenType::GREATER:
+      return OPCode::OP_GREATER;
+    default:
+      NOT_REACHED;
+  }
 }
 
 }  // namespace Startear

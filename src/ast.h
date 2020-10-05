@@ -330,16 +330,17 @@ class FunctionDeclaration : public ASTNode {
 using FunctionDeclarationPtr = std::unique_ptr<FunctionDeclaration>;
 
 class IfStatement : public ASTNode {
-public:
-  IfStatement(EqualityExpressionPtr eql_expr, std::vector<ASTNodePtr>& statements)
-    : eql_expr_(std::move(eql_expr)), statements_(std::move(statements)) {}
+ public:
+  IfStatement(EqualityExpressionPtr eql_expr,
+              std::vector<ASTNodePtr>& statements)
+      : eql_expr_(std::move(eql_expr)), statements_(std::move(statements)) {}
 
   // ASTNode
   void accept(IASTNodeVisitor& visitor) override;
   void self(Program& program) override;
   std::string toString() override;
 
-public:
+ public:
   EqualityExpressionPtr eql_expr_;
   std::vector<ASTNodePtr> statements_;
 };
@@ -372,6 +373,8 @@ class ProgramDeclaration : public ASTNode {
 };
 
 using ProgramDeclarationPtr = std::unique_ptr<ProgramDeclaration>;
+
+OPCode opcodeFromToken(TokenType token);
 
 }  // namespace Startear
 

@@ -88,9 +88,33 @@ enum class OPCode : size_t {
    * values.
    */
   OP_RETURN,
+  /**
+   * Check whether the top and second of execution stack are the same value or
+   * not. If it is NOT the same, it will jump to the second operand. The result
+   * of this comparison will be saved on the top of stack. 0 or 1 In general,
+   * this instruction will be used with OP_BRANCH.
+   *
+   * e.g. OP_EQUAL
+   */
+  OP_EQUAL,
+  OP_BANG_EQUAL,
+  OP_LESS_EQUAL,
+  OP_GREATER_EQUAL,
+  OP_LESS,
+  OP_GREATER,
+  /**
+   * Jump to the specified program counter.
+   * The first operand specifies the destination when the top of stack is 1.
+   * The second operand specifies the destination when the top of stack is 2.
+   *
+   * e.g. OP_BRANCH <target pc when true> <target pc when false>
+   */
+  OP_BRANCH,
 };
 
 std::string opcodeToString(OPCode op);
+
+bool validOperandSize(OPCode, size_t operand_size);
 
 }  // namespace Startear
 

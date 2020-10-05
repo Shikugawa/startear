@@ -67,8 +67,9 @@ class VMImpl : public VM {
   struct Frame {
     std::stack<Value> stack_;  // Execution stack
     /**
-     * It might be not efficient approach to save local variable with the pair of variable name and entity.
-     * Is there a critical approach to improve memory efficiency?
+     * It might be not efficient approach to save local variable with the pair
+     * of variable name and entity. Is there a critical approach to improve
+     * memory efficiency?
      */
     std::unordered_map<std::string, Value> lv_table_;  // Local variable table
     // Program counter which is used to point out the place of memory.
@@ -118,6 +119,7 @@ class VMImpl : public VM {
   };
 
   std::optional<Value> lookupLocalVariableTable(size_t ptr);
+  std::optional<Value> lookupLocalVariableTable(std::string variable_name);
   void saveLocalVariableTable(std::string name, Value& v);
   void print(Value& v);
   void add();

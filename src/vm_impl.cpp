@@ -29,6 +29,10 @@
 
 #include <iostream>
 
+#define TERMINATE_VM                     \
+  state_ = VMState::TerminatedWithError; \
+  NOT_REACHED;
+
 namespace Startear {
 
 VMImpl::VMImpl(Program& program) : program_(program) {
@@ -57,24 +61,20 @@ void VMImpl::start() {
       case OPCode::OP_PRINT: {
         STARTEAR_ASSERT(operand_ptrs.size() == 1);
         auto data_entry = program_.fetchValue(operand_ptrs[0]);
-        if (data_entry) {
-          STARTEAR_ASSERT(data_entry->category() == Value::Category::Literal);
-          print(*data_entry);
-        } else {
+        if (!data_entry || data_entry->category() != Value::Category::Literal) {
           NOT_REACHED;
         }
+        print(*data_entry);
         incPc();
         break;
       }
       case OPCode::OP_PUSH: {
         STARTEAR_ASSERT(operand_ptrs.size() == 1);
         auto data_entry = program_.fetchValue(operand_ptrs[0]);
-        if (data_entry) {
-          STARTEAR_ASSERT(data_entry->category() == Value::Category::Literal);
-          pushStack(*data_entry);
-        } else {
-          NOT_REACHED;
+        if (!data_entry || data_entry->category() != Value::Category::Literal) {
+          TERMINATE_VM;
         }
+        pushStack(*data_entry);
         incPc();
         break;
       }
@@ -88,24 +88,21 @@ void VMImpl::start() {
         STARTEAR_ASSERT(operand_ptrs.size() == 1);
         Value stack_top = popStack();
         auto variable_name_entry = program_.fetchValue(operand_ptrs[0]);
-        if (variable_name_entry) {
-          STARTEAR_ASSERT(variable_name_entry->getString().has_value());
-          auto variable_name = *variable_name_entry->getString();
-          saveLocalVariableTable(variable_name, stack_top);
-        } else {
-          NOT_REACHED;
+        if (!variable_name_entry || !variable_name_entry->getString()) {
+          TERMINATE_VM;
         }
+        auto variable_name = *variable_name_entry->getString();
+        saveLocalVariableTable(variable_name, stack_top);
         incPc();
         break;
       }
       case OPCode::OP_LOAD_LOCAL: {
         STARTEAR_ASSERT(operand_ptrs.size() == 1);
         auto value_entry = lookupLocalVariableTable(operand_ptrs[0]);
-        if (value_entry) {
-          pushStack(*value_entry);
-        } else {
-          NOT_REACHED;
+        if (!value_entry) {
+          TERMINATE_VM;
         }
+        pushStack(*value_entry);
         incPc();
         break;
       }
@@ -123,61 +120,90 @@ void VMImpl::start() {
         pushStack(return_value);
         break;
       }
+      case OPCode::OP_EQUAL: {
+        STARTEAR_ASSERT(operand_ptrs.size() == 0);
+        if (frame_.top().stack_.size() < 2) {
+          TERMINATE_VM;
+        }
+        auto lhs = popStack();
+        if (!lhs.getDouble().has_value()) {
+          TERMINATE_VM;
+        }
+        auto rhs = popStack();
+        if (!rhs.getDouble().has_value()) {
+          TERMINATE_VM;
+        }
+        bool result = *lhs.getDouble() == *rhs.getDouble();
+        pushStack(Value(Value::Category::Literal, result));
+        break;
+      }
+      case OPCode::OP_BRANCH: {
+        STARTEAR_ASSERT(operand_ptrs.size() == 1);
+        auto operand_entry = program_.fetchValue(operand_ptrs[0]);
+        if (!operand_entry.has_value() ||
+            operand_entry->getDouble().has_value()) {
+          TERMINATE_VM;
+        }
+        auto pc = static_cast<size_t>(*operand_entry->getDouble());
+        if (pc < 0 || pc >= program_.instructions().size()) {
+          std::cerr << fmt::format(
+              "{} is out of range of the number of instructions", pc);
+          TERMINATE_VM;
+        }
+        pc_ = pc;
+        break;
+      }
       case OPCode::OP_CALL: {
         STARTEAR_ASSERT(operand_ptrs.size() == 1);
         auto func_label_entry = program_.fetchValue(operand_ptrs[0]);
-        if (func_label_entry) {
-          STARTEAR_ASSERT(func_label_entry->category() ==
-                          Value::Category::Variable);
-          STARTEAR_ASSERT(func_label_entry->getString());
-          // TODO: This information should be known when code analysis phase
-          auto func_entry = program_.functionRegistry().findByName(
-              *func_label_entry->getString());
-          if (!func_entry.has_value()) {
-            std::cerr << fmt::format("{} is not defined",
-                                     *func_label_entry->getString())
-                      << std::endl;
-            state_ = VMState::TerminatedWithError;
-            return;
-          }
-
-          Frame next_frame;
-          next_frame.return_pc_ = pc_ + 1;
-
-          // Extract stack value from current frame to next one.
-          for (int32_t /* not to be inferenced as unsigned integer */ i =
-                   func_entry->get().args_.size() - 1;
-               i >= 0; --i) {
-            auto current_stack_top = popStack();
-            next_frame.stack_.push(current_stack_top);
-            auto arg_name_entry =
-                program_.fetchValue(func_entry->get().args_[i]);
-            if (!arg_name_entry.has_value()) {
-              std::cerr << "The variable name of argument is not registered on "
-                           "program data region"
-                        << std::endl;
-              NOT_REACHED;
-            }
-            if (!arg_name_entry->getString().has_value()) {
-              NOT_REACHED;
-            }
-            next_frame.lv_table_.emplace(*arg_name_entry->getString(),
-                                         current_stack_top);
-          }
-
-          pc_ = func_entry->get().pc_;
-          frame_.emplace(next_frame);
-        } else {
-          NOT_REACHED;
+        if (!func_label_entry) {
+          TERMINATE_VM;
         }
+        STARTEAR_ASSERT(func_label_entry->category() ==
+                        Value::Category::Variable);
+        STARTEAR_ASSERT(func_label_entry->getString());
+        // TODO: This information should be known when code analysis phase
+        auto func_entry = program_.functionRegistry().findByName(
+            *func_label_entry->getString());
+        if (!func_entry.has_value()) {
+          std::cerr << fmt::format("{} is not defined",
+                                   *func_label_entry->getString())
+                    << std::endl;
+          TERMINATE_VM;
+        }
+
+        Frame next_frame;
+        next_frame.return_pc_ = pc_ + 1;
+
+        // Extract stack value from current frame to next one.
+        for (int32_t /* not to be inferenced as unsigned integer */ i =
+                 func_entry->get().args_.size() - 1;
+             i >= 0; --i) {
+          auto current_stack_top = popStack();
+          next_frame.stack_.push(current_stack_top);
+          auto arg_name_entry = program_.fetchValue(func_entry->get().args_[i]);
+          if (!arg_name_entry.has_value()) {
+            std::cerr << "The variable name of argument is not registered on "
+                         "program data region"
+                      << std::endl;
+            TERMINATE_VM;
+          }
+          if (!arg_name_entry->getString().has_value()) {
+            TERMINATE_VM;
+          }
+          next_frame.lv_table_.emplace(*arg_name_entry->getString(),
+                                       current_stack_top);
+        }
+
+        pc_ = func_entry->get().pc_;
+        frame_.emplace(next_frame);
         break;
       }
       default:
         std::cerr << fmt::format("{} is unsupported instruction",
                                  opcodeToString(opcode))
                   << std::endl;
-        state_ = VMState::TerminatedWithError;
-        return;
+        TERMINATE_VM;
     }
   }
 
@@ -204,16 +230,20 @@ std::optional<Value> VMImpl::lookupLocalVariableTable(size_t ptr) {
   }
   STARTEAR_ASSERT(variable_name_entry->category() == Value::Category::Variable);
   if (variable_name_entry->getString()) {
-    auto variable_name = *variable_name_entry->getString();
-    auto variable_itr = frame_.top().lv_table_.find(variable_name);
-    if (variable_itr == frame_.top().lv_table_.end()) {
-      return std::nullopt;
-    }
-    auto literal = variable_itr->second;
-    STARTEAR_ASSERT(literal.category() == Value::Category::Literal);
-    return literal;
+    return lookupLocalVariableTable(*variable_name_entry->getString());
   }
   return std::nullopt;
+}
+
+std::optional<Value> VMImpl::lookupLocalVariableTable(
+    std::string variable_name) {
+  auto variable_itr = frame_.top().lv_table_.find(variable_name);
+  if (variable_itr == frame_.top().lv_table_.end()) {
+    return std::nullopt;
+  }
+  auto literal = variable_itr->second;
+  STARTEAR_ASSERT(literal.category() == Value::Category::Literal);
+  return literal;
 }
 
 void VMImpl::saveLocalVariableTable(std::string name, Value& v) {
@@ -236,7 +266,7 @@ void VMImpl::print(Value& v) {
       std::cout << v.getDouble().value() << std::endl;
       break;
     default:
-      NOT_REACHED;
+      TERMINATE_VM;
   }
 }
 

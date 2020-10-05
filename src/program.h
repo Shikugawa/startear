@@ -81,8 +81,7 @@ class Instruction {
   Instruction(OPCode code) : code_(code) {}
   template <class It>
   Instruction(OPCode code, It begin, It end)
-      : code_(code), operands_ptr_(begin, end) {
-  }
+      : code_(code), operands_ptr_(begin, end) {}
 
   const OPCode opcode() const { return code_; }
   const std::vector<size_t>& operandsPointer() const { return operands_ptr_; }
@@ -120,8 +119,9 @@ class Program {
 
   struct FunctionMetadata {
     std::string name_;
-    size_t pc_;    // Program counter of specified function.
-    std::vector<size_t> args_; // The pointers to argument names for temporal use.
+    size_t pc_;  // Program counter of specified function.
+    std::vector<size_t>
+        args_;  // The pointers to argument names for temporal use.
   };
 
   struct FunctionRegistry {
@@ -129,7 +129,8 @@ class Program {
     findByProgramCounter(size_t line) const;
     std::optional<std::reference_wrapper<const FunctionMetadata>> findByName(
         std::string name) const;
-    void registerFunction(std::string name, std::vector<size_t>& args, size_t pc);
+    void registerFunction(std::string name, std::vector<size_t>& args,
+                          size_t pc);
 
    private:
     // TODO: replace flat hash map
@@ -153,7 +154,6 @@ class Program {
   const std::vector<Value>& values() { return values_; }
 
  private:
-  bool validOperandSize(OPCode code, size_t operand_size);
   bool isProgramEnd(size_t pc) const { return pc >= instructions_.size(); }
 
   std::vector<Instruction> instructions_;
