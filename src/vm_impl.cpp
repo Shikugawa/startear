@@ -106,12 +106,6 @@ void VMImpl::start() {
         incPc();
         break;
       }
-      case OPCode::OP_PUSH_FRAME: {
-        STARTEAR_ASSERT(operand_ptrs.size() == 0);
-        pushFrame();
-        incPc();
-        break;
-      }
       case OPCode::OP_RETURN: {
         auto return_pc = frame_.top().return_pc_;
         auto return_value = popStack();

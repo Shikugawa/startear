@@ -80,8 +80,6 @@ enum class OPCode : size_t {
    * startup function like "main".
    */
   OP_CALL,
-  OP_PUSH_FRAME,  // deprecated
-  OP_POP_FRAME,   // deprecated
   /**
    * Return the stack ptr and program counter. If there is return values
    * , store them to the top of stack. It is not supported to return multiple

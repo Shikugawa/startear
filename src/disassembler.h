@@ -65,10 +65,6 @@ void disassemble(Program& p) {
         SET_INSTRUCTION("OP_LESS");
       case OPCode::OP_GREATER:
         SET_INSTRUCTION("OP_GREATER");
-      case OPCode::OP_PUSH_FRAME:
-        SET_INSTRUCTION("OP_PUSH_FRAME");
-      case OPCode::OP_POP_FRAME:
-        SET_INSTRUCTION("OP_POP_FRAME")
       case OPCode::OP_RETURN:
         SET_INSTRUCTION("OP_RETURN");
         std::cout << fmt::format("{}", instr_str);

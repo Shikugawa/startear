@@ -358,38 +358,6 @@ TEST_F(EmitterTest, Compare6) {
   disassemble(program2);
 }
 
-TEST(VmTest, BasicTest) {
-  Program program;
-  program.addInst(OPCode::OP_PRINT,
-                  {std::make_pair(Value::Category::Literal, 32.0)});
-  VMImpl vm(program);
-  testing::internal::CaptureStdout();
-  vm.start();
-  EXPECT_EQ("32\n", testing::internal::GetCapturedStdout());
-
-  Program program2;
-  program2.addInst(OPCode::OP_PRINT,
-                   {std::make_pair(Value::Category::Literal, 44.2)});
-  testing::internal::CaptureStdout();
-  vm.restart(program2);
-  EXPECT_EQ("44.2\n", testing::internal::GetCapturedStdout());
-
-  Program program3;
-  program3.addInst(OPCode::OP_PUSH_FRAME);
-  program3.addInst(OPCode::OP_PUSH,
-                   {std::make_pair(Value::Category::Literal, 22.0)});
-  program3.addInst(OPCode::OP_PUSH,
-                   {std::make_pair(Value::Category::Literal, 34.0)});
-  program3.addInst(OPCode::OP_ADD);
-  program3.addInst(
-      OPCode::OP_STORE_LOCAL,
-      {std::make_pair(Value::Category::Variable, std::string("r"))});
-  testing::internal::CaptureStdout();
-  vm.restart(program3);
-  EXPECT_EQ("56\n", testing::internal::GetCapturedStdout());
-  disassemble(program3);
-}
-
 class VMExecIntegration : public testing::Test {
  public:
   void prepare(std::string& code, std::function<void(Program&)> program_eval,

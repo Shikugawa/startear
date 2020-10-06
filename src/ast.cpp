@@ -178,8 +178,6 @@ void ComparisonExpression::self(Program& program) {
   } else if (add_left_expr_ != nullptr && right_expr_ != nullptr) {
     static_cast<ASTNode*>(add_left_expr_.get())->self(program);
     static_cast<ASTNode*>(right_expr_.get())->self(program);
-    program.addInst(OPCode::OP_EQUAL,
-                    {std::make_pair(Value::Category::Literal, 3.0)});
   } else if (add_left_expr_ != nullptr) {
     static_cast<ASTNode*>(add_left_expr_.get())->self(program);
   } else {
@@ -222,7 +220,6 @@ void EqualityExpression::self(Program& program) {
     NOT_REACHED;
   }
   if (token_ != nullptr) {
-    //    std::cout <<  << std::endl;
     program.addInst(opcodeFromToken(token_->type()));
   }
 }

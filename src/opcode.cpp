@@ -42,10 +42,6 @@ std::string opcodeToString(OPCode op) {
       return "OP_LOAD_LOCAL";
     case OPCode::OP_CALL:
       return "OP_CALL";
-    case OPCode::OP_PUSH_FRAME:
-      return "OP_PUSH_FRAME";
-    case OPCode::OP_POP_FRAME:
-      return "OP_POP_FRAME";
     case OPCode::OP_RETURN:
       return "OP_RETURN";
     case OPCode::OP_EQUAL:
@@ -84,8 +80,6 @@ bool validOperandSize(OPCode code, size_t operand_size) {
     case OPCode::OP_LESS:
     case OPCode::OP_GREATER:
     case OPCode::OP_RETURN:
-    case OPCode::OP_PUSH_FRAME:
-    case OPCode::OP_POP_FRAME:
       return expect_size(0);
     case OPCode::OP_BRANCH:
       return expect_size(2);
