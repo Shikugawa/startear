@@ -78,9 +78,22 @@ void VMImpl::start() {
         incPc();
         break;
       }
+      case OPCode::OP_SUB:
+      case OPCode::OP_DIV:
+      case OPCode::OP_MUL:
       case OPCode::OP_ADD: {
         STARTEAR_ASSERT(operand_ptrs.size() == 0);
-        add();
+        if (frame_.top().stack_.size() < 2) {
+          TERMINATE_VM;
+        }
+        auto lhs = popStack();
+        auto rhs = popStack();
+        if (!lhs.getDouble() || !rhs.getDouble()) {
+          TERMINATE_VM;
+        }
+        auto result = calc(opcode, *lhs.getDouble(), *rhs.getDouble());
+        Value v(Value::Category::Literal, result);
+        pushStack(v);
         incPc();
         break;
       }
@@ -279,20 +292,19 @@ void VMImpl::print(Value& v) {
   }
 }
 
-void VMImpl::add() {
-  auto operand1 = getStackTop();
-  if (operand1.type() != Value::SupportedTypes::Double) {
-    return;
+double VMImpl::calc(OPCode code, double lhs, double rhs) {
+  switch (code) {
+    case OPCode::OP_ADD:
+      return lhs + rhs;
+    case OPCode::OP_SUB:
+      return lhs - rhs;
+    case OPCode::OP_MUL:
+      return lhs * rhs;
+    case OPCode::OP_DIV:
+      return lhs / rhs;
+    default:
+      NOT_REACHED;
   }
-  popStack();
-  auto operand2 = getStackTop();
-  if (operand2.type() != Value::SupportedTypes::Double) {
-    return;
-  }
-  popStack();
-  auto result = operand1.getDouble().value() + operand2.getDouble().value();
-  Value v(Value::Category::Literal, result);
-  pushStack(v);
 }
 
 bool VMImpl::cmp(OPCode code, double lhs, double rhs) {

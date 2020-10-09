@@ -44,10 +44,13 @@ enum class OPCode : size_t {
    */
   OP_PUSH,
   /**
-   * Pop two values from the stack, and add them. Finally, store calculation
-   * result
+   * Pop two values from the stack, and (add, mul, sub, div) them. Finally,
+   * store calculation result
    */
   OP_ADD,
+  OP_SUB,
+  OP_MUL,
+  OP_DIV,
   /**
    * Save stack top value with operand variable name.
    * e.g. OP_STORE_LOCAL "n"

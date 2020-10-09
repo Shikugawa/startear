@@ -122,7 +122,7 @@ class VMImpl : public VM {
   std::optional<Value> lookupLocalVariableTable(std::string variable_name);
   void saveLocalVariableTable(std::string name, Value& v);
   void print(Value& v);
-  void add();
+  double calc(OPCode code, double lhs, double rhs);
   bool cmp(OPCode code, double lhs, double rhs);
 
   size_t pc_{0};      // Program counter
