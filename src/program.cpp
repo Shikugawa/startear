@@ -26,6 +26,7 @@
 #include "program.h"
 
 #include <cstring>
+#include <fmt/format.h>
 
 #include "startear_assert.h"
 
@@ -86,6 +87,17 @@ void Program::addFunction(std::string name, std::vector<size_t>& args) {
   registered_function_.registerFunction(name, args, current_top);
 }
 
+void Program::addLabel(std::string name) {
+  auto current_top = instructions_.size();
+  registered_function_.registerLabel(name, current_top);
+}
+
+std::string Program::getIndexedLabel() {
+  std::string label = fmt::format("label_{}", label_index_);
+  ++label_index_;
+  return label;
+}
+
 std::optional<std::reference_wrapper<const Program::FunctionMetadata>>
 Program::FunctionRegistry::findByProgramCounter(size_t line) const {
   auto itr = pc_name_.find(line);
@@ -111,6 +123,11 @@ void Program::FunctionRegistry::registerFunction(std::string name,
   metadata_.emplace(
       std::make_pair(name, Program::FunctionMetadata{name, pc, args}));
   STARTEAR_ASSERT(pc_name_.size() == metadata_.size());
+}
+
+void Program::FunctionRegistry::registerLabel(std::string label, size_t pc) {
+  auto dummy_args = std::vector<size_t>(0);
+  registerFunction(label, dummy_args, pc);
 }
 
 }  // namespace Startear

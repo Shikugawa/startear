@@ -344,7 +344,21 @@ std::string ReturnDeclaration::toString() {
 
 void IfStatement::accept(IASTNodeVisitor& visitor) { visitor.visit(*this); }
 
-void IfStatement::self(Program& program) { Unimplemented(); }
+void IfStatement::self(Program& program) {
+  static_cast<ASTNode*>(eql_expr_.get())->self(program);
+  std::string label_if_entry = program.getIndexedLabel();
+  std::string label_not_if_entry = program.getIndexedLabel();
+  program.addInst(OPCode::OP_BRANCH, {
+    std::make_pair(Value::Category::Literal, label_if_entry),
+    std::make_pair(Value::Category::Literal, label_not_if_entry)});
+  for (auto i = 0; i < statements_.size(); ++i) {
+    if (i == 0) {
+      program.addLabel(label_if_entry);
+    }
+    static_cast<ASTNode*>(statements_[i].get())->self(program);
+  }
+  program.addLabel(label_not_if_entry);
+}
 
 std::string IfStatement::toString() {
   std::string program;

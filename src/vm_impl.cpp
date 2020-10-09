@@ -49,7 +49,7 @@ VMImpl::VMImpl(Program& program) : program_(program) {
 void VMImpl::start() {
   while (true) {
     auto instr_entry = program_.fetchInst(pc_);
-    if (!instr_entry.has_value()) {
+    if (!instr_entry.has_value() || frame_.size() < 1) {
       break;
     }
 
@@ -108,12 +108,22 @@ void VMImpl::start() {
       }
       case OPCode::OP_RETURN: {
         auto return_pc = frame_.top().return_pc_;
+        pc_ = return_pc;
+        // Call if the function has no instructions.
+        if (frame_.top().stack_.size() == 0) {
+          popFrame();
+          break;
+        }
         auto return_value = popStack();
         popFrame();
-        pc_ = return_pc;
         pushStack(return_value);
         break;
       }
+      case OPCode::OP_BANG_EQUAL:
+      case OPCode::OP_GREATER_EQUAL:
+      case OPCode::OP_LESS_EQUAL:
+      case OPCode::OP_LESS:
+      case OPCode::OP_GREATER:
       case OPCode::OP_EQUAL: {
         STARTEAR_ASSERT(operand_ptrs.size() == 0);
         if (frame_.top().stack_.size() < 2) {
@@ -127,21 +137,32 @@ void VMImpl::start() {
         if (!rhs.getDouble().has_value()) {
           TERMINATE_VM;
         }
-        bool result = *lhs.getDouble() == *rhs.getDouble();
-        pushStack(Value(Value::Category::Literal, result));
+        bool result = cmp(opcode, *lhs.getDouble(), *rhs.getDouble());
+        pushStack(Value(Value::Category::Literal, static_cast<double>(result)));
+        incPc();
         break;
       }
       case OPCode::OP_BRANCH: {
-        STARTEAR_ASSERT(operand_ptrs.size() == 1);
-        auto operand_entry = program_.fetchValue(operand_ptrs[0]);
-        if (!operand_entry.has_value() ||
-            operand_entry->getDouble().has_value()) {
+        STARTEAR_ASSERT(operand_ptrs.size() == 2);
+        bool cmp = static_cast<bool>(popStack().getDouble());
+        auto label_entry = program_.fetchValue(cmp ? operand_ptrs[0] : operand_ptrs[1]);
+        if (!label_entry.has_value() || !label_entry->getString()) {
           TERMINATE_VM;
         }
-        auto pc = static_cast<size_t>(*operand_entry->getDouble());
+        auto metadata_entry =
+            program_.functionRegistry().findByName(*label_entry->getString());
+        if (!metadata_entry) {
+          std::cerr << fmt::format("Failed to find label entry on {}",
+                                   *label_entry->getString())
+                    << std::endl;
+          TERMINATE_VM;
+        }
+        auto pc = metadata_entry->get().pc_;
         if (pc < 0 || pc >= program_.instructions().size()) {
           std::cerr << fmt::format(
-              "{} is out of range of the number of instructions", pc);
+                           "{} is out of range of the number of instructions",
+                           pc)
+                    << std::endl;
           TERMINATE_VM;
         }
         pc_ = pc;
@@ -278,6 +299,25 @@ void VMImpl::add() {
   auto result = operand1.getDouble().value() + operand2.getDouble().value();
   Value v(Value::Category::Literal, result);
   pushStack(v);
+}
+
+bool VMImpl::cmp(OPCode code, double lhs, double rhs) {
+  switch (code) {
+    case OPCode::OP_BANG_EQUAL:
+      return lhs != rhs;
+    case OPCode::OP_GREATER_EQUAL:
+      return lhs >= rhs;
+    case OPCode::OP_LESS_EQUAL:
+      return lhs <= rhs;
+    case OPCode::OP_LESS:
+      return lhs < rhs;
+    case OPCode::OP_GREATER:
+      return lhs > rhs;
+    case OPCode::OP_EQUAL:
+      return lhs == rhs;
+    default:
+      NOT_REACHED;
+  }
 }
 
 }  // namespace Startear

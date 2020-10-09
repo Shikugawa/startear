@@ -97,24 +97,48 @@ void disassemble(Program& p) {
         auto operand_ptrs = instr_entry->get().operandsPointer();
         STARTEAR_ASSERT(operand_ptrs.size() == 1);
         auto operand_data_entry = p.fetchValue(operand_ptrs[0]);
-        if (operand_data_entry) {
-          switch (operand_data_entry->type()) {
-            case Value::SupportedTypes::String:
-              std::cout << fmt::format("{} {}", instr_str,
-                                       operand_data_entry->getString().value());
-              break;
-            case Value::SupportedTypes::Double:
-              std::cout << fmt::format("{} {}", instr_str,
-                                       operand_data_entry->getDouble().value());
-              break;
-            default:
-              NOT_REACHED;
-          }
-          if (func_name.has_value()) {
-            std::cout << fmt::format(" <- {}", func_name.value().get().name_);
-          }
-          std::cout << std::endl;
+        if (!operand_data_entry) {
+          NOT_REACHED;
         }
+        switch (operand_data_entry->type()) {
+          case Value::SupportedTypes::String:
+            std::cout << fmt::format("{} {}", instr_str,
+                                     operand_data_entry->getString().value());
+            break;
+          case Value::SupportedTypes::Double:
+            std::cout << fmt::format("{} {}", instr_str,
+                                     operand_data_entry->getDouble().value());
+            break;
+          default:
+            NOT_REACHED;
+        }
+        if (func_name.has_value()) {
+          std::cout << fmt::format(" <- {}", func_name.value().get().name_);
+        }
+        std::cout << std::endl;
+        break;
+      }
+      case OPCode::OP_BRANCH: {
+        instr_str = "OP_BRANCH";
+        auto operand_ptrs = instr_entry->get().operandsPointer();
+        STARTEAR_ASSERT(operand_ptrs.size() == 2);
+        auto true_label_entry = p.fetchValue(operand_ptrs[0]);
+        if (!true_label_entry || !true_label_entry->getString() ||
+            true_label_entry->category() != Value::Category::Literal) {
+          NOT_REACHED;
+        }
+        auto false_label_entry = p.fetchValue(operand_ptrs[1]);
+        if (!false_label_entry || !false_label_entry->getString() ||
+            false_label_entry->category() != Value::Category::Literal) {
+          NOT_REACHED;
+        }
+        std::cout << fmt::format("{} {} {}", instr_str,
+                                 *true_label_entry->getString(),
+                                 *false_label_entry->getString());
+        if (func_name.has_value()) {
+          std::cout << fmt::format(" <- {}", func_name.value().get().name_);
+        }
+        std::cout << std::endl;
         break;
       }
     }

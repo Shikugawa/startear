@@ -129,6 +129,7 @@ class Program {
     findByProgramCounter(size_t line) const;
     std::optional<std::reference_wrapper<const FunctionMetadata>> findByName(
         std::string name) const;
+    void registerLabel(std::string label, size_t pc);
     void registerFunction(std::string name, std::vector<size_t>& args,
                           size_t pc);
 
@@ -145,6 +146,8 @@ class Program {
   // This function is used if you'd like to create function from bytecode
   // generation AST visitor.
   void addFunction(std::string name, std::vector<size_t>& args);
+  void addLabel(std::string name);
+  std::string getIndexedLabel();
   const FunctionRegistry& functionRegistry() const {
     return registered_function_;
   }
@@ -176,6 +179,7 @@ class Program {
   //
   // In this case, we set the pair {"sample", {16, 0}} in this hash table.
   FunctionRegistry registered_function_;
+  size_t label_index_{0};
 };
 
 template <typename T>

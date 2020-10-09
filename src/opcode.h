@@ -102,10 +102,10 @@ enum class OPCode : size_t {
   OP_GREATER,
   /**
    * Jump to the specified program counter.
-   * The first operand specifies the destination when the top of stack is 1.
-   * The second operand specifies the destination when the top of stack is 2.
+   * The first operand specifies the destination when the top of stack is 1.0.
+   * The second operand specifies the destination when the top of stack is 0.0.
    *
-   * e.g. OP_BRANCH <target pc when true> <target pc when false>
+   * e.g. OP_BRANCH <target label when true> <target label when false>
    */
   OP_BRANCH,
 };

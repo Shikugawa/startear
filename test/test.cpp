@@ -281,15 +281,15 @@ TEST_F(EmitterTest, StoreVariable) {
 }
 
 TEST_F(EmitterTest, StoreVariable2) {
-    run("let b = a + 2");
-    auto program = emitter_.emit();
-    ASSERT_EQ(program.fetchInst(0)->get().opcode(), OPCode::OP_LOAD_LOCAL);
-    ASSERT_EQ(program.fetchInst(0)->get().operandsPointer()[0], 0);
-    ASSERT_EQ(program.fetchInst(1)->get().opcode(), OPCode::OP_PUSH);
-    ASSERT_EQ(program.fetchInst(1)->get().operandsPointer()[0], 1);
-    ASSERT_EQ(program.fetchInst(2)->get().opcode(), OPCode::OP_ADD);
-    ASSERT_EQ(program.fetchInst(3)->get().opcode(), OPCode::OP_STORE_LOCAL);
-    disassemble(program);
+  run("let b = a + 2");
+  auto program = emitter_.emit();
+  ASSERT_EQ(program.fetchInst(0)->get().opcode(), OPCode::OP_LOAD_LOCAL);
+  ASSERT_EQ(program.fetchInst(0)->get().operandsPointer()[0], 0);
+  ASSERT_EQ(program.fetchInst(1)->get().opcode(), OPCode::OP_PUSH);
+  ASSERT_EQ(program.fetchInst(1)->get().operandsPointer()[0], 1);
+  ASSERT_EQ(program.fetchInst(2)->get().opcode(), OPCode::OP_ADD);
+  ASSERT_EQ(program.fetchInst(3)->get().opcode(), OPCode::OP_STORE_LOCAL);
+  disassemble(program);
 }
 
 TEST_F(EmitterTest, Compare) {
@@ -469,22 +469,22 @@ TEST_F(VMExecIntegration, IfAndSubstitution) {
   std::string code = R"(
 fn main() {
     let a = 3;
-    if (a == 3) {
-      a = 4;
+    if (a != 3) {
+      a = 2;
     }
 }
 )";
   prepare(
       code,
       [&](Program& program) {
-        //              EXPECT_EQ(program.instructions()[0].opcode(),
-        //              OPCode::OP_PUSH);
-        //              EXPECT_EQ(program.instructions()[1].opcode(),
-        //              OPCode::OP_STORE_LOCAL);
-        //              EXPECT_EQ(program.instructions()[2].opcode(),
-        //              OPCode::OP_PUSH);
-        //              EXPECT_EQ(program.instructions()[3].opcode(),
-        //              OPCode::OP_STORE_LOCAL);
+        EXPECT_EQ(program.instructions()[0].opcode(), OPCode::OP_PUSH);
+        EXPECT_EQ(program.instructions()[1].opcode(), OPCode::OP_STORE_LOCAL);
+        EXPECT_EQ(program.instructions()[2].opcode(), OPCode::OP_LOAD_LOCAL);
+        EXPECT_EQ(program.instructions()[3].opcode(), OPCode::OP_PUSH);
+        EXPECT_EQ(program.instructions()[4].opcode(), OPCode::OP_EQUAL);
+        EXPECT_EQ(program.instructions()[5].opcode(), OPCode::OP_BRANCH);
+        EXPECT_EQ(program.instructions()[6].opcode(), OPCode::OP_PUSH);
+        EXPECT_EQ(program.instructions()[7].opcode(), OPCode::OP_STORE_LOCAL);
       },
       [&](VMImpl& vm) {
         const auto& top_frame = vm.peekFrame();
@@ -493,7 +493,7 @@ fn main() {
 
         const auto& entry_a = top_frame.lv_table_.find("a");
         ASSERT_TRUE(entry_a != top_frame.lv_table_.end());
-        ASSERT_EQ(entry_a->second.getDouble().value(), 4.0);
+        ASSERT_EQ(entry_a->second.getDouble().value(), 3.0);
       },
       true);
 }

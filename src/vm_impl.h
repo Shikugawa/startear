@@ -123,6 +123,7 @@ class VMImpl : public VM {
   void saveLocalVariableTable(std::string name, Value& v);
   void print(Value& v);
   void add();
+  bool cmp(OPCode code, double lhs, double rhs);
 
   size_t pc_{0};      // Program counter
   Program& program_;  // All of codes which will be executed
