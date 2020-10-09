@@ -397,6 +397,35 @@ fn main() {}
       [&](VMImpl& vm) {}, true);
 }
 
+TEST_F(VMExecIntegration, Cond) {
+  std::string code = R"(
+fn main() {
+  let p = 3 > 2;
+  let q = 3 < 2;
+  let r = 3 == 3;
+  let s = 3 != 3;
+}
+)";
+  prepare(
+      code, [&](Program& program) {},
+      [&](VMImpl& vm) {
+        const auto& top_frame = vm.peekFrame();
+        const auto& entry_p = top_frame.lv_table_.find("p");
+        ASSERT_TRUE(entry_p != top_frame.lv_table_.end());
+        ASSERT_EQ(entry_p->second.getDouble().value(), 1.0);
+        const auto& entry_q = top_frame.lv_table_.find("q");
+        ASSERT_TRUE(entry_q != top_frame.lv_table_.end());
+        ASSERT_EQ(entry_q->second.getDouble().value(), 0.0);
+        const auto& entry_r = top_frame.lv_table_.find("r");
+        ASSERT_TRUE(entry_r != top_frame.lv_table_.end());
+        ASSERT_EQ(entry_r->second.getDouble().value(), 1.0);
+        const auto& entry_s = top_frame.lv_table_.find("s");
+        ASSERT_TRUE(entry_s != top_frame.lv_table_.end());
+        ASSERT_EQ(entry_s->second.getDouble().value(), 0.0);
+      },
+      true);
+}
+
 TEST_F(VMExecIntegration, BasicCalc) {
   std::string code = R"(
 fn main() {
@@ -481,7 +510,7 @@ fn main() {
         EXPECT_EQ(program.instructions()[1].opcode(), OPCode::OP_STORE_LOCAL);
         EXPECT_EQ(program.instructions()[2].opcode(), OPCode::OP_LOAD_LOCAL);
         EXPECT_EQ(program.instructions()[3].opcode(), OPCode::OP_PUSH);
-        EXPECT_EQ(program.instructions()[4].opcode(), OPCode::OP_EQUAL);
+        EXPECT_EQ(program.instructions()[4].opcode(), OPCode::OP_BANG_EQUAL);
         EXPECT_EQ(program.instructions()[5].opcode(), OPCode::OP_BRANCH);
         EXPECT_EQ(program.instructions()[6].opcode(), OPCode::OP_PUSH);
         EXPECT_EQ(program.instructions()[7].opcode(), OPCode::OP_STORE_LOCAL);

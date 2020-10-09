@@ -130,11 +130,8 @@ void VMImpl::start() {
           TERMINATE_VM;
         }
         auto lhs = popStack();
-        if (!lhs.getDouble().has_value()) {
-          TERMINATE_VM;
-        }
         auto rhs = popStack();
-        if (!rhs.getDouble().has_value()) {
+        if (!lhs.getDouble() || !rhs.getDouble()) {
           TERMINATE_VM;
         }
         bool result = cmp(opcode, *lhs.getDouble(), *rhs.getDouble());
@@ -144,7 +141,7 @@ void VMImpl::start() {
       }
       case OPCode::OP_BRANCH: {
         STARTEAR_ASSERT(operand_ptrs.size() == 2);
-        bool cmp = static_cast<bool>(popStack().getDouble());
+        bool cmp = static_cast<bool>(*popStack().getDouble());
         auto label_entry = program_.fetchValue(cmp ? operand_ptrs[0] : operand_ptrs[1]);
         if (!label_entry.has_value() || !label_entry->getString()) {
           TERMINATE_VM;
@@ -159,11 +156,8 @@ void VMImpl::start() {
         }
         auto pc = metadata_entry->get().pc_;
         if (pc < 0 || pc >= program_.instructions().size()) {
-          std::cerr << fmt::format(
-                           "{} is out of range of the number of instructions",
-                           pc)
-                    << std::endl;
-          TERMINATE_VM;
+          state_ = VMState::SuccessfulTerminated;
+          return;
         }
         pc_ = pc;
         break;
@@ -306,13 +300,13 @@ bool VMImpl::cmp(OPCode code, double lhs, double rhs) {
     case OPCode::OP_BANG_EQUAL:
       return lhs != rhs;
     case OPCode::OP_GREATER_EQUAL:
-      return lhs >= rhs;
-    case OPCode::OP_LESS_EQUAL:
       return lhs <= rhs;
+    case OPCode::OP_LESS_EQUAL:
+      return lhs >= rhs;
     case OPCode::OP_LESS:
-      return lhs < rhs;
-    case OPCode::OP_GREATER:
       return lhs > rhs;
+    case OPCode::OP_GREATER:
+      return lhs < rhs;
     case OPCode::OP_EQUAL:
       return lhs == rhs;
     default:
