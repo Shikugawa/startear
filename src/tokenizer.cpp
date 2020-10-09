@@ -48,34 +48,34 @@ void Tokenizer::scanToken() {
       parseString();
       break;
     case '+':
-      addToken(Addition(TokenType::PLUS, "+"));
+      addToken(Addition(TokenType::PLUS, "+", current_lineno_));
       break;
     case '-':
-      addToken(Addition(TokenType::MINUS, "-"));
+      addToken(Addition(TokenType::MINUS, "-", current_lineno_));
       break;
     case '*':
-      addToken(Multiplication(TokenType::STAR, "*"));
+      addToken(Multiplication(TokenType::STAR, "*", current_lineno_));
       break;
     case '(':
-      addToken(Normal(TokenType::LEFT_PAREN, "("));
+      addToken(Normal(TokenType::LEFT_PAREN, "(", current_lineno_));
       break;
     case ')':
-      addToken(Normal(TokenType::RIGHT_PAREN, ")"));
+      addToken(Normal(TokenType::RIGHT_PAREN, ")", current_lineno_));
       break;
     case '{':
-      addToken(Normal(TokenType::LEFT_BRACE, "{"));
+      addToken(Normal(TokenType::LEFT_BRACE, "{", current_lineno_));
       break;
     case '}':
-      addToken(Normal(TokenType::RIGHT_BRACE, "}"));
+      addToken(Normal(TokenType::RIGHT_BRACE, "}", current_lineno_));
       break;
     case ',':
-      addToken(Normal(TokenType::COMMA, ","));
+      addToken(Normal(TokenType::COMMA, ",", current_lineno_));
       break;
     case '.':
-      addToken(Normal(TokenType::DOT, "."));
+      addToken(Normal(TokenType::DOT, ".", current_lineno_));
       break;
     case ';':
-      addToken(Normal(TokenType::SEMICOLON, ";"));
+      addToken(Normal(TokenType::SEMICOLON, ";", current_lineno_));
       break;
     case '!':
       parseInequality(TokenType::BANG);
@@ -101,6 +101,9 @@ void Tokenizer::scanToken() {
       if (parseReservedWord(TokenType::RETURN)) break;
     case 'i':
       if (parseReservedWord(TokenType::IF)) break;
+    case '\n':
+      ++current_lineno_;
+      break;
     default:
       if (isDigit(c)) {
         parseNumber();
@@ -115,20 +118,24 @@ void Tokenizer::parseInequality(TokenType t) {
   bool is_next_equal = nextMatch('=');
   switch (t) {
     case TokenType::GREATER:
-      is_next_equal ? addToken(Compare(TokenType::GREATER_EQUAL, ">="))
-                    : addToken(Compare(TokenType::GREATER, ">"));
+      is_next_equal
+          ? addToken(Compare(TokenType::GREATER_EQUAL, ">=", current_lineno_))
+          : addToken(Compare(TokenType::GREATER, ">", current_lineno_));
       return;
     case TokenType::LESS:
-      is_next_equal ? addToken(Compare(TokenType::LESS_EQUAL, "<="))
-                    : addToken(Compare(TokenType::LESS, "<"));
+      is_next_equal
+          ? addToken(Compare(TokenType::LESS_EQUAL, "<=", current_lineno_))
+          : addToken(Compare(TokenType::LESS, "<", current_lineno_));
       return;
     case TokenType::EQUAL:
-      is_next_equal ? addToken(Equality(TokenType::EQUAL_EQUAL, "=="))
-                    : addToken(Normal(TokenType::EQUAL, "="));
+      is_next_equal
+          ? addToken(Equality(TokenType::EQUAL_EQUAL, "==", current_lineno_))
+          : addToken(Normal(TokenType::EQUAL, "=", current_lineno_));
       return;
     case TokenType::BANG:
-      is_next_equal ? addToken(Equality(TokenType::BANG_EQUAL, "!="))
-                    : addToken(Unary(TokenType::BANG, "!"));
+      is_next_equal
+          ? addToken(Equality(TokenType::BANG_EQUAL, "!=", current_lineno_))
+          : addToken(Unary(TokenType::BANG, "!", current_lineno_));
       return;
     default:
       NOT_REACHED;
@@ -147,10 +154,10 @@ void Tokenizer::parseSlash() {
       }
       comment += next_char;
     }
-    addToken(Normal(TokenType::COMMENT, comment));
+    addToken(Normal(TokenType::COMMENT, comment, current_lineno_));
   } else {
     --current_;
-    addToken(Multiplication(TokenType::SLASH, "/"));
+    addToken(Multiplication(TokenType::SLASH, "/", current_lineno_));
   }
 }
 
@@ -168,7 +175,7 @@ void Tokenizer::parseString() {
   if (!terminated) {
     return;
   }
-  addToken(Primary(TokenType::STRING, data));
+  addToken(Primary(TokenType::STRING, data, current_lineno_));
 }
 
 void Tokenizer::parseNumber() {
@@ -182,7 +189,7 @@ void Tokenizer::parseNumber() {
     }
     number += next_char;
   }
-  addToken(Primary(TokenType::NUMBER, number));
+  addToken(Primary(TokenType::NUMBER, number, current_lineno_));
 }
 
 bool Tokenizer::parseReservedWord(TokenType expected) {
@@ -200,7 +207,7 @@ bool Tokenizer::parseReservedWord(TokenType expected) {
     current_ -= proceed_counter;
     return false;
   } else {
-    addToken(Normal(expected, reserved_words[expected]));
+    addToken(Normal(expected, reserved_words[expected], current_lineno_));
     return true;
   }
 }
@@ -217,6 +224,6 @@ void Tokenizer::parseIdentifier() {
     identifier += next_char;
   }
 
-  addToken(Normal(TokenType::IDENTIFIER, identifier));
+  addToken(Normal(TokenType::IDENTIFIER, identifier, current_lineno_));
 }
 }  // namespace Startear

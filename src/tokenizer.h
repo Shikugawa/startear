@@ -84,14 +84,17 @@ static std::unordered_map<TokenType, std::string> reserved_words{
 
 class Token {
  public:
-  Token(TokenType type, std::string lexeme) : type_(type), lexeme_(lexeme) {}
+  Token(TokenType type, std::string lexeme, size_t lineno)
+      : type_(type), lexeme_(lexeme), lineno_(lineno) {}
 
   TokenType type() { return type_; }
   std::string lexeme() { return lexeme_; }
+  size_t lineno() { return lineno_; }
 
  private:
   TokenType type_;
   std::string lexeme_;
+  size_t lineno_;
 };
 
 using TokenRef = std::reference_wrapper<Token>;
@@ -101,8 +104,10 @@ using TokenPtr = std::unique_ptr<Token>;
 // == or !=
 class Equality final : public Token {
  public:
-  Equality(TokenType type, std::string lexeme) : Token(type, lexeme) {}
-  Equality(Token& token) : Token(token.type(), token.lexeme()) {}
+  Equality(TokenType type, std::string lexeme, size_t lineno)
+      : Token(type, lexeme, lineno) {}
+  Equality(Token& token)
+      : Token(token.type(), token.lexeme(), token.lineno()) {}
 };
 
 using EqualityPtr = std::unique_ptr<Equality>;
@@ -110,8 +115,9 @@ using EqualityPtr = std::unique_ptr<Equality>;
 // <=, >=, <, >
 class Compare final : public Token {
  public:
-  Compare(TokenType type, std::string lexeme) : Token(type, lexeme) {}
-  Compare(Token& token) : Token(token.type(), token.lexeme()) {}
+  Compare(TokenType type, std::string lexeme, size_t lineno)
+      : Token(type, lexeme, lineno) {}
+  Compare(Token& token) : Token(token.type(), token.lexeme(), token.lineno()) {}
 };
 
 using ComparePtr = std::unique_ptr<Compare>;
@@ -119,8 +125,10 @@ using ComparePtr = std::unique_ptr<Compare>;
 // +, -
 class Addition final : public Token {
  public:
-  Addition(TokenType type, std::string lexeme) : Token(type, lexeme) {}
-  Addition(Token& token) : Token(token.type(), token.lexeme()) {}
+  Addition(TokenType type, std::string lexeme, size_t lineno)
+      : Token(type, lexeme, lineno) {}
+  Addition(Token& token)
+      : Token(token.type(), token.lexeme(), token.lineno()) {}
 };
 
 using AdditionPtr = std::unique_ptr<Addition>;
@@ -128,8 +136,10 @@ using AdditionPtr = std::unique_ptr<Addition>;
 // *, /
 class Multiplication final : public Token {
  public:
-  Multiplication(TokenType type, std::string lexeme) : Token(type, lexeme) {}
-  Multiplication(Token& token) : Token(token.type(), token.lexeme()) {}
+  Multiplication(TokenType type, std::string lexeme, size_t lineno)
+      : Token(type, lexeme, lineno) {}
+  Multiplication(Token& token)
+      : Token(token.type(), token.lexeme(), token.lineno()) {}
 };
 
 using MultiplicationPtr = std::unique_ptr<Multiplication>;
@@ -137,8 +147,9 @@ using MultiplicationPtr = std::unique_ptr<Multiplication>;
 // !, -
 class Unary final : public Token {
  public:
-  Unary(TokenType type, std::string lexeme) : Token(type, lexeme) {}
-  Unary(Token& token) : Token(token.type(), token.lexeme()) {}
+  Unary(TokenType type, std::string lexeme, size_t lineno)
+      : Token(type, lexeme, lineno) {}
+  Unary(Token& token) : Token(token.type(), token.lexeme(), token.lineno()) {}
 };
 
 using UnaryPtr = std::unique_ptr<Unary>;
@@ -146,8 +157,9 @@ using UnaryPtr = std::unique_ptr<Unary>;
 // true/false, nil, literals
 class Primary final : public Token {
  public:
-  Primary(TokenType type, std::string lexeme) : Token(type, lexeme) {}
-  Primary(Token& token) : Token(token.type(), token.lexeme()) {}
+  Primary(TokenType type, std::string lexeme, size_t lineno)
+      : Token(type, lexeme, lineno) {}
+  Primary(Token& token) : Token(token.type(), token.lexeme(), token.lineno()) {}
 };
 
 using PrimaryPtr = std::unique_ptr<Primary>;
@@ -155,8 +167,9 @@ using PrimaryPtr = std::unique_ptr<Primary>;
 // Normal tokens.
 class Normal final : public Token {
  public:
-  Normal(TokenType type, std::string lexeme) : Token(type, lexeme) {}
-  Normal(Token& token) : Token(token.type(), token.lexeme()) {}
+  Normal(TokenType type, std::string lexeme, size_t lineno)
+      : Token(type, lexeme, lineno) {}
+  Normal(Token& token) : Token(token.type(), token.lexeme(), token.lineno()) {}
 };
 
 using NormalPtr = std::unique_ptr<Normal>;
@@ -194,6 +207,7 @@ class Tokenizer {
   std::vector<Token> tokens_;
   size_t current_{0};
   std::string code_;
+  size_t current_lineno_{1};
 };
 
 }  // namespace Startear

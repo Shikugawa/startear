@@ -25,6 +25,8 @@
 
 #include "parser.h"
 
+#include <fmt/format.h>
+
 namespace Startear {
 
 namespace {
@@ -173,7 +175,9 @@ PrimaryExpressionPtr Parser::primaryExpression() {
     forward();
     auto expr = basicExpression();
     if (!match(TokenType::RIGHT_PAREN)) {
-      std::cerr << "Parse Error" << std::endl;
+      std::cerr << fmt::format("Syntax Error: line no {}",
+                               tokens_[current_].lineno())
+                << std::endl;
       return nullptr;
     }
     forward();
@@ -200,7 +204,9 @@ LetStatementPtr Parser::letStatement(bool substitution) {
     if (match(TokenType::IDENTIFIER) && match(TokenType::LEFT_PAREN, 1)) {
       FunctionCallPtr expr = functionCall();
       if (!expr) {
-        std::cerr << "failed to parse" << std::endl;
+        std::cerr << fmt::format("Syntax Error: line no {}",
+                                 tokens_[current_].lineno())
+                  << std::endl;
         return nullptr;
       }
       stmt = std::make_unique<LetStatement>(
@@ -208,7 +214,9 @@ LetStatementPtr Parser::letStatement(bool substitution) {
     } else {
       BasicExpressionPtr expr = basicExpression();
       if (!expr) {
-        std::cerr << "failed to parse" << std::endl;
+        std::cerr << fmt::format("Syntax Error: line no {}",
+                                 tokens_[current_].lineno())
+                  << std::endl;
         return nullptr;
       }
       stmt = std::make_unique<LetStatement>(
@@ -223,7 +231,9 @@ FunctionCallPtr Parser::functionCall() {
   auto name_token = tokens_[current_];
   forward();
   if (!match(TokenType::LEFT_PAREN)) {
-    std::cerr << "Missing (" << std::endl;
+    std::cerr << fmt::format("Syntax Error: line no {}",
+                             tokens_[current_].lineno())
+              << std::endl;
     return nullptr;
   }
   forward();
@@ -267,19 +277,24 @@ ReturnDeclarationPtr Parser::returnDeclaration() {
 IfStatementPtr Parser::ifStatement() {
   forward();
   if (!match(TokenType::LEFT_PAREN)) {
-    // TODO: add line no
-    std::cerr << "Syntax Error" << std::endl;
+    std::cerr << fmt::format("Syntax Error: line no {}",
+                             tokens_[current_].lineno())
+              << std::endl;
     NOT_REACHED;
   }
   forward();
   auto eql_expr_ptr = equalityExpression();
   if (!match(TokenType::RIGHT_PAREN)) {
-    std::cerr << "Syntax Error" << std::endl;
+    std::cerr << fmt::format("Syntax Error: line no {}",
+                             tokens_[current_].lineno())
+              << std::endl;
     NOT_REACHED;
   }
   forward();
   if (!match(TokenType::LEFT_BRACE)) {
-    std::cerr << "Syntax Error" << std::endl;
+    std::cerr << fmt::format("Syntax Error: line no {}",
+                             tokens_[current_].lineno())
+              << std::endl;
     NOT_REACHED;
   }
   forward();
@@ -305,13 +320,17 @@ IfStatementPtr Parser::ifStatement() {
       NOT_REACHED;
     }
     if (!current_stmt) {
-      // TODO: line number
-      std::cerr << "Failed to parse" << std::endl;
+      std::cerr << fmt::format("Syntax Error: line no {}",
+                               tokens_[current_].lineno())
+                << std::endl;
       return nullptr;
     }
     if (!match(TokenType::SEMICOLON)) {
-      std::cout << "Variable definition must be ended with semicolon"
-                << std::endl;
+      std::cerr
+          << fmt::format(
+                 "Variable definition must be ended with semicolon: line no {}",
+                 tokens_[current_].lineno())
+          << std::endl;
       return nullptr;
     }
     forward();
@@ -326,7 +345,9 @@ FunctionDeclarationPtr Parser::functionDeclaration() {
   auto name_token = tokens_[current_];
   forward();
   if (!match(TokenType::LEFT_PAREN)) {
-    std::cerr << "Missing (" << std::endl;
+    std::cerr << fmt::format("Syntax Error: line no {}",
+                             tokens_[current_].lineno())
+              << std::endl;
     return nullptr;
   }
   forward();
@@ -341,14 +362,21 @@ FunctionDeclarationPtr Parser::functionDeclaration() {
         forward();
         break;
       } else if (!match(TokenType::COMMA)) {
-        std::cerr << "arguments should be separated by comma" << std::endl;
+        std::cerr << fmt::format(
+                         "arguments should be separated by comma: line no {}",
+                         tokens_[current_].lineno())
+                  << std::endl;
         return nullptr;
       }
       args.emplace_back(std::make_unique<Normal>(current_token));
       forward();
     }
     if (!match(TokenType::LEFT_BRACE)) {
-      std::cerr << "function should be started with left bracket" << std::endl;
+      std::cerr
+          << fmt::format(
+                 "function should be started with left bracket: line no {}",
+                 tokens_[current_].lineno())
+          << std::endl;
       return nullptr;
     }
   } else if (match(TokenType::RIGHT_PAREN)) {
@@ -385,18 +413,23 @@ FunctionDeclarationPtr Parser::functionDeclaration() {
       current_stmt = ifStatement();
       semicolon_required = false;
     } else {
-      // TODO: Show line number
-      std::cerr << "Syntax Error" << std::endl;
+      std::cerr << fmt::format("Syntax Error: line no {}",
+                               tokens_[current_].lineno())
+                << std::endl;
       NOT_REACHED;
     }
     if (!current_stmt) {
-      // TODO: line number
-      std::cerr << "Failed to parse" << std::endl;
+      std::cerr << fmt::format("Syntax Error: line no {}",
+                               tokens_[current_].lineno())
+                << std::endl;
       return nullptr;
     }
     if (semicolon_required && !match(TokenType::SEMICOLON)) {
-      std::cout << "Variable definition must be ended with semicolon"
-                << std::endl;
+      std::cerr
+          << fmt::format(
+                 "Variable definition must be ended with semicolon: line no {}",
+                 tokens_[current_].lineno())
+          << std::endl;
       return nullptr;
     }
     forward();
