@@ -222,6 +222,15 @@ LetStatementPtr Parser::letStatement(bool substitution) {
       stmt = std::make_unique<LetStatement>(
           std::make_unique<Normal>(root_token), std::move(expr));
     }
+    if (!match(TokenType::SEMICOLON)) {
+      std::cerr
+          << fmt::format(
+                 "Variable definition must be ended with semicolon: line no {}",
+                 tokens_[current_].lineno())
+          << std::endl;
+      return nullptr;
+    }
+    forward();
     return stmt;
   }
   return nullptr;
@@ -270,6 +279,13 @@ ReturnDeclarationPtr Parser::returnDeclaration() {
     return std::make_unique<ReturnDeclaration>(
         std::make_unique<Primary>(return_value_token));
   }
+  if (!match(TokenType::SEMICOLON)) {
+    std::cerr << fmt::format("return must be ended with semicolon: line no {}",
+                             tokens_[current_].lineno())
+              << std::endl;
+    return nullptr;
+  }
+  forward();
   return std::make_unique<ReturnDeclaration>(
       std::make_unique<Normal>(return_value_token));
 }
@@ -325,15 +341,6 @@ IfStatementPtr Parser::ifStatement() {
                 << std::endl;
       return nullptr;
     }
-    if (!match(TokenType::SEMICOLON)) {
-      std::cerr
-          << fmt::format(
-                 "Variable definition must be ended with semicolon: line no {}",
-                 tokens_[current_].lineno())
-          << std::endl;
-      return nullptr;
-    }
-    forward();
     expressions.emplace_back(std::move(current_stmt));
   }
   forward();
@@ -391,8 +398,6 @@ FunctionDeclarationPtr Parser::functionDeclaration() {
       forward();
       break;
     }
-    bool semicolon_required = true;  // IF or FOR statement is not required to
-                                     // be ended with semicolon.
     ASTNodePtr current_stmt;
     if (match(TokenType::VAR)) {
       current_stmt = letStatement();
@@ -411,7 +416,6 @@ FunctionDeclarationPtr Parser::functionDeclaration() {
       current_stmt = returnDeclaration();
     } else if (match(TokenType::IF)) {
       current_stmt = ifStatement();
-      semicolon_required = false;
     } else {
       std::cerr << fmt::format("Syntax Error: line no {}",
                                tokens_[current_].lineno())
@@ -424,15 +428,6 @@ FunctionDeclarationPtr Parser::functionDeclaration() {
                 << std::endl;
       return nullptr;
     }
-    if (semicolon_required && !match(TokenType::SEMICOLON)) {
-      std::cerr
-          << fmt::format(
-                 "Variable definition must be ended with semicolon: line no {}",
-                 tokens_[current_].lineno())
-          << std::endl;
-      return nullptr;
-    }
-    forward();
     expressions.emplace_back(std::move(current_stmt));
   }
   return std::make_unique<FunctionDeclaration>(

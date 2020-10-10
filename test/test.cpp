@@ -565,8 +565,34 @@ fn main() {
       true);
 }
 
+TEST_F(VMExecIntegration, NestReturn) {
+  std::string code = R"(
+fn calc(num) {
+  if (num == 0) {
+    let b = num;
+  }
+  return 2;
+}
+
+fn main() {
+  let a = calc(0);
+}
+)";
+  prepare(
+      code, [&](Program& program) {},
+      [&](VMImpl& vm) {
+        const auto& top_frame = vm.peekFrame();
+
+        // Variable state
+        const auto& entry_a = top_frame.lv_table_.find("a");
+        ASSERT_TRUE(entry_a != top_frame.lv_table_.end());
+        ASSERT_EQ(entry_a->second.getDouble().value(), 2.0);
+      },
+      true);
+}
+
 TEST_F(VMExecIntegration, Fibonacchi) {
-    std::string code = R"(
+  std::string code = R"(
 fn calc(num) {
   if (num == 0 || num == 1) {
     return 1;
@@ -579,18 +605,17 @@ fn main() {
   let a = calc(3);
 }
 )";
-    prepare(
-            code,
-            [&](Program& program) {},
-            [&](VMImpl& vm) {
-              const auto& top_frame = vm.peekFrame();
+  prepare(
+      code, [&](Program& program) {},
+      [&](VMImpl& vm) {
+        const auto& top_frame = vm.peekFrame();
 
-              // Variable state
-              const auto& entry_a = top_frame.lv_table_.find("a");
-              ASSERT_TRUE(entry_a != top_frame.lv_table_.end());
-              ASSERT_EQ(entry_a->second.getDouble().value(), 2.0);
-            },
-            true);
+        // Variable state
+        const auto& entry_a = top_frame.lv_table_.find("a");
+        ASSERT_TRUE(entry_a != top_frame.lv_table_.end());
+        ASSERT_EQ(entry_a->second.getDouble().value(), 2.0);
+      },
+      true);
 }
 
 }  // namespace

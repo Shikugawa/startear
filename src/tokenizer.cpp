@@ -44,6 +44,9 @@ std::vector<Token>& Tokenizer::scanTokens() {
 void Tokenizer::scanToken() {
   auto c = consume();
   switch (c) {
+    case '\n':
+      ++current_lineno_;
+      break;
     case '"':
       parseString();
       break;
@@ -101,9 +104,6 @@ void Tokenizer::scanToken() {
       if (parseReservedWord(TokenType::RETURN)) break;
     case 'i':
       if (parseReservedWord(TokenType::IF)) break;
-    case '\n':
-      ++current_lineno_;
-      break;
     default:
       if (isDigit(c)) {
         parseNumber();
