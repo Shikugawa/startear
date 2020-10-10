@@ -36,6 +36,12 @@ std::string opcodeToString(OPCode op) {
       return "OP_PUSH";
     case OPCode::OP_ADD:
       return "OP_ADD";
+    case OPCode::OP_SUB:
+      return "OP_SUB";
+    case OPCode::OP_MUL:
+      return "OP_MUL";
+    case OPCode::OP_DIV:
+      return "OP_DIV";
     case OPCode::OP_STORE_LOCAL:
       return "OP_STORE_LOCAL";
     case OPCode::OP_LOAD_LOCAL:
@@ -73,6 +79,9 @@ bool validOperandSize(OPCode code, size_t operand_size) {
     case OPCode::OP_CALL:
       return expect_size(1);
     case OPCode::OP_ADD:
+    case OPCode::OP_SUB:
+    case OPCode::OP_MUL:
+    case OPCode::OP_DIV:
     case OPCode::OP_EQUAL:
     case OPCode::OP_BANG_EQUAL:
     case OPCode::OP_LESS_EQUAL:

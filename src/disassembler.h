@@ -53,6 +53,12 @@ void disassemble(Program& p) {
     switch (instr_entry->get().opcode()) {
       case OPCode::OP_ADD:
         instr_str = "OP_ADD";
+      case OPCode::OP_SUB:
+        SET_INSTRUCTION("OP_SUB");
+      case OPCode::OP_MUL:
+        SET_INSTRUCTION("OP_MUL");
+      case OPCode::OP_DIV:
+        SET_INSTRUCTION("OP_DIV");
       case OPCode::OP_EQUAL:
         SET_INSTRUCTION("OP_EQUAL");
       case OPCode::OP_BANG_EQUAL:

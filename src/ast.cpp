@@ -140,11 +140,11 @@ void AdditionExpression::self(Program& program) {
   if (add_left_expr_ != nullptr && right_expr_ != nullptr) {
     static_cast<ASTNode*>(add_left_expr_.get())->self(program);
     static_cast<ASTNode*>(right_expr_.get())->self(program);
-    program.addInst(OPCode::OP_ADD);
+    program.addInst(opcodeFromToken(token_->type()));
   } else if (mul_left_expr_ != nullptr && right_expr_ != nullptr) {
     static_cast<ASTNode*>(mul_left_expr_.get())->self(program);
     static_cast<ASTNode*>(right_expr_.get())->self(program);
-    program.addInst(OPCode::OP_ADD);
+    program.addInst(opcodeFromToken(token_->type()));
   } else if (mul_left_expr_ != nullptr) {
     static_cast<ASTNode*>(mul_left_expr_.get())->self(program);
   } else {
@@ -417,6 +417,14 @@ OPCode opcodeFromToken(TokenType token) {
       return OPCode::OP_LESS;
     case TokenType::GREATER:
       return OPCode::OP_GREATER;
+    case TokenType::PLUS:
+      return OPCode::OP_ADD;
+    case TokenType::MINUS:
+      return OPCode::OP_SUB;
+    case TokenType::STAR:
+      return OPCode::OP_MUL;
+    case TokenType::SLASH:
+      return OPCode::OP_DIV;
     default:
       NOT_REACHED;
   }
