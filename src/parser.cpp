@@ -276,6 +276,7 @@ ReturnDeclarationPtr Parser::returnDeclaration() {
     }
   }
   if (is_literal) {
+    forward();
     return std::make_unique<ReturnDeclaration>(
         std::make_unique<Primary>(return_value_token));
   }

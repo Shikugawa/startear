@@ -569,7 +569,7 @@ TEST_F(VMExecIntegration, NestReturn) {
   std::string code = R"(
 fn calc(num) {
   if (num == 0) {
-    let b = num;
+    return 1;
   }
   return 2;
 }
@@ -586,7 +586,7 @@ fn main() {
         // Variable state
         const auto& entry_a = top_frame.lv_table_.find("a");
         ASSERT_TRUE(entry_a != top_frame.lv_table_.end());
-        ASSERT_EQ(entry_a->second.getDouble().value(), 2.0);
+        ASSERT_EQ(entry_a->second.getDouble().value(), 1.0);
       },
       true);
 }
