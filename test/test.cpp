@@ -208,6 +208,7 @@ TEST_F(ParserTest, BasicTest) {
   run("0 < 3", "(< 0 3)\n");
   run("0 > 3", "(> 0 3)\n");
   run("0 == (3 == 4)", "(== 0 (== 3 4))\n");
+  run("2 == 2 || 2 == 3", "(|| (== 2 2) (== 2 3))\n");
 }
 
 TEST_F(ParserTest, FuncTest) {
@@ -227,18 +228,6 @@ main2 (arg) ->
 
 )";
   run(code, expected);
-}
-
-TEST_F(ParserTest, IfTest) {
-  std::string code = R"(
-fn main() {
-  let a = 0;
-  if (a == 0) {
-    a = 3;
-  }
-}
-)";
-  run(code, "");
 }
 
 class EmitterTest : public testing::Test {
@@ -269,7 +258,7 @@ TEST_F(EmitterTest, BasicTest) {
 }
 
 TEST_F(EmitterTest, StoreVariable) {
-  run("let a = 3 + 1");
+  run("let a = 3 + 1;");
   auto program = emitter_.emit();
   ASSERT_EQ(program.fetchInst(0)->get().opcode(), OPCode::OP_PUSH);
   ASSERT_EQ(program.fetchInst(0)->get().operandsPointer()[0], 0);
@@ -281,7 +270,7 @@ TEST_F(EmitterTest, StoreVariable) {
 }
 
 TEST_F(EmitterTest, StoreVariable2) {
-  run("let b = a + 2");
+  run("let b = a + 2;");
   auto program = emitter_.emit();
   ASSERT_EQ(program.fetchInst(0)->get().opcode(), OPCode::OP_LOAD_LOCAL);
   ASSERT_EQ(program.fetchInst(0)->get().operandsPointer()[0], 0);
@@ -348,7 +337,7 @@ TEST_F(EmitterTest, Compare5) {
 }
 
 TEST_F(EmitterTest, Compare6) {
-  run("3 <= 2");
+  run("3 <= 2 || 3 == 3");
   auto program2 = emitter_.emit();
   ASSERT_EQ(program2.fetchInst(0)->get().opcode(), OPCode::OP_PUSH);
   ASSERT_EQ(program2.fetchInst(0)->get().operandsPointer()[0], 0);
@@ -404,6 +393,7 @@ fn main() {
   let q = 3 < 2;
   let r = 3 == 3;
   let s = 3 != 3;
+  let t = 3 == 3 || 3 == 2;
 }
 )";
   prepare(
@@ -422,6 +412,9 @@ fn main() {
         const auto& entry_s = top_frame.lv_table_.find("s");
         ASSERT_TRUE(entry_s != top_frame.lv_table_.end());
         ASSERT_EQ(entry_s->second.getDouble().value(), 0.0);
+        const auto& entry_t = top_frame.lv_table_.find("t");
+        ASSERT_TRUE(entry_t != top_frame.lv_table_.end());
+        ASSERT_EQ(entry_t->second.getDouble().value(), 1.0);
       },
       true);
 }

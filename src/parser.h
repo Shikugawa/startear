@@ -40,6 +40,8 @@ class Parser {
 
  private:
   BasicExpressionPtr basicExpression();
+  OrLogicExpressionPtr orLogicExpression();
+  AndLogicExpressionPtr andLogicExpression();
   EqualityExpressionPtr equalityExpression();
   ComparisonExpressionPtr comparisonExpression();
   AdditionExpressionPtr additionExpression();

@@ -55,6 +55,8 @@ enum TokenType {
   EQUAL_EQUAL,
   GREATER,
   GREATER_EQUAL,
+  AND_AND,
+  BAR_BAR,
   LESS,
   LESS_EQUAL,
   SLASH,
@@ -101,7 +103,7 @@ using TokenRef = std::reference_wrapper<Token>;
 
 using TokenPtr = std::unique_ptr<Token>;
 
-// == or !=
+// ==, !=, ||, &&
 class Equality final : public Token {
  public:
   Equality(TokenType type, std::string lexeme, size_t lineno)

@@ -103,6 +103,8 @@ enum class OPCode : size_t {
   OP_GREATER_EQUAL,
   OP_LESS,
   OP_GREATER,
+  OP_AND,
+  OP_OR,
   /**
    * Jump to the specified program counter.
    * The first operand specifies the destination when the top of stack is 1.0.

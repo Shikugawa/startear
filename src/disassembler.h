@@ -71,6 +71,10 @@ void disassemble(Program& p) {
         SET_INSTRUCTION("OP_LESS");
       case OPCode::OP_GREATER:
         SET_INSTRUCTION("OP_GREATER");
+      case OPCode::OP_AND:
+        SET_INSTRUCTION("OP_AND");
+      case OPCode::OP_OR:
+        SET_INSTRUCTION("OP_OR");
       case OPCode::OP_RETURN:
         SET_INSTRUCTION("OP_RETURN");
         std::cout << fmt::format("{}", instr_str);

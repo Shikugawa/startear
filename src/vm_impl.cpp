@@ -137,6 +137,8 @@ void VMImpl::start() {
       case OPCode::OP_LESS_EQUAL:
       case OPCode::OP_LESS:
       case OPCode::OP_GREATER:
+      case OPCode::OP_AND:
+      case OPCode::OP_OR:
       case OPCode::OP_EQUAL: {
         STARTEAR_ASSERT(operand_ptrs.size() == 0);
         if (frame_.top().stack_.size() < 2) {
@@ -146,6 +148,14 @@ void VMImpl::start() {
         auto rhs = popStack();
         if (!lhs.getDouble() || !rhs.getDouble()) {
           TERMINATE_VM;
+        }
+        if (opcode == OPCode::OP_OR || opcode == OPCode::OP_AND) {
+          if (*lhs.getDouble() != 0 || *lhs.getDouble() != 1) {
+            TERMINATE_VM;
+          }
+          if (*rhs.getDouble() != 0 || *rhs.getDouble() != 1) {
+            TERMINATE_VM;
+          }
         }
         bool result = cmp(opcode, *lhs.getDouble(), *rhs.getDouble());
         pushStack(Value(Value::Category::Literal, static_cast<double>(result)));

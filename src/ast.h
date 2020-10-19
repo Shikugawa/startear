@@ -242,9 +242,17 @@ class EqualityExpression : public ASTNode {
 
 using EqualityExpressionPtr = EqualityExpression::EqualityExpressionPtr;
 
-class BasicExpression : public ASTNode {
+class AndLogicExpression : public ASTNode {
  public:
-  BasicExpression(EqualityExpressionPtr expr) : expr_(std::move(expr)) {}
+  using AndLogicExpressionPtr = std::unique_ptr<AndLogicExpression>;
+  AndLogicExpression(EqualityExpressionPtr left_expr) : eql_left_expr_(std::move(left_expr)) {}
+  AndLogicExpression(EqualityPtr token, EqualityExpressionPtr left_expr,
+                     EqualityExpressionPtr right_expr)
+      : token_(std::move(token)),
+        eql_left_expr_(std::move(left_expr)),
+        eql_right_expr_(std::move(right_expr)) {}
+  AndLogicExpression(EqualityPtr token, EqualityExpressionPtr left_expr,
+                     AndLogicExpressionPtr right_expr) : token_(std::move(token)), eql_left_expr_(std::move(left_expr)), and_logic_right_expr_(std::move(right_expr)) {}
 
   // ASTNode
   void accept(IASTNodeVisitor& visitor) override;
@@ -252,7 +260,52 @@ class BasicExpression : public ASTNode {
   std::string toString() override;
 
  private:
-  EqualityExpressionPtr expr_;
+  TokenPtr token_;
+  EqualityExpressionPtr eql_left_expr_;
+  EqualityExpressionPtr eql_right_expr_;
+  AndLogicExpressionPtr and_logic_right_expr_;
+};
+
+using AndLogicExpressionPtr = AndLogicExpression::AndLogicExpressionPtr;
+
+class OrLogicExpression : public ASTNode {
+ public:
+  using OrLogicExpressionPtr = std::unique_ptr<OrLogicExpression>;
+  OrLogicExpression(AndLogicExpressionPtr left_expr)
+      : and_logic_left_expr_(std::move(left_expr)) {}
+  OrLogicExpression(EqualityPtr token, AndLogicExpressionPtr left_expr,
+                    AndLogicExpressionPtr right_expr)
+      : token_(std::move(token)),
+        and_logic_left_expr_(std::move(left_expr)),
+        and_logic_right_expr_(std::move(right_expr)) {}
+  OrLogicExpression(EqualityPtr token, AndLogicExpressionPtr left_expr, OrLogicExpressionPtr right_expr)
+   : token_(std::move(token)), and_logic_right_expr_(std::move(left_expr)), or_logic_expr_(std::move(right_expr)) {}
+
+  // ASTNode
+  void accept(IASTNodeVisitor& visitor) override;
+  void self(Program& program) override;
+  std::string toString() override;
+
+ private:
+  TokenPtr token_;
+  AndLogicExpressionPtr and_logic_left_expr_;
+  AndLogicExpressionPtr and_logic_right_expr_;
+  OrLogicExpressionPtr or_logic_expr_;
+};
+
+using OrLogicExpressionPtr = OrLogicExpression::OrLogicExpressionPtr;
+
+class BasicExpression : public ASTNode {
+ public:
+  BasicExpression(OrLogicExpressionPtr expr) : expr_(std::move(expr)) {}
+
+  // ASTNode
+  void accept(IASTNodeVisitor& visitor) override;
+  void self(Program& program) override;
+  std::string toString() override;
+
+ private:
+  OrLogicExpressionPtr expr_;
 };
 
 class FunctionCall : public ASTNode {

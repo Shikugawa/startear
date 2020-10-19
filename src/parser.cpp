@@ -36,7 +36,51 @@ bool isDigit(char c) { return c >= '0' && c <= '9'; }
 ASTNodePtr Parser::parse() { return programDeclaration(); }
 
 BasicExpressionPtr Parser::basicExpression() {
-  return std::make_unique<BasicExpression>(equalityExpression());
+  return std::make_unique<BasicExpression>(orLogicExpression());
+}
+
+OrLogicExpressionPtr Parser::orLogicExpression() {
+  auto left = andLogicExpression();
+  OrLogicExpressionPtr or_expr;
+  while (match(TokenType::BAR_BAR)) {
+    auto& root_token = tokens_[current_];
+    forward();
+    auto right = andLogicExpression();
+    if (right != nullptr) {
+      or_expr = std::make_unique<OrLogicExpression>(std::make_unique<Equality>(root_token),
+              std::move(left), std::move(right));
+    } else {
+      auto or_right = orLogicExpression();
+      or_expr = std::make_unique<OrLogicExpression>(std::make_unique<Equality>(root_token),
+              std::move(left), std::move(or_right));
+    }
+  }
+  if (or_expr != nullptr) {
+    return or_expr;
+  }
+  return std::make_unique<OrLogicExpression>(std::move(left));
+}
+
+AndLogicExpressionPtr Parser::andLogicExpression() {
+  auto left = equalityExpression();
+  AndLogicExpressionPtr and_expr;
+  while (match(TokenType::AND_AND)) {
+    auto& root_token = tokens_[current_];
+    forward();
+    auto right = equalityExpression();
+    if (right != nullptr) {
+      and_expr = std::make_unique<AndLogicExpression>(std::make_unique<Equality>(root_token),
+                                                    std::move(left), std::move(right));
+    } else {
+      auto or_right = andLogicExpression();
+      and_expr = std::make_unique<AndLogicExpression>(std::make_unique<Equality>(root_token),
+                                                    std::move(left), std::move(or_right));
+    }
+  }
+  if (and_expr != nullptr) {
+    return and_expr;
+  }
+  return std::make_unique<AndLogicExpression>(std::move(left));
 }
 
 EqualityExpressionPtr Parser::equalityExpression() {
@@ -71,8 +115,8 @@ ComparisonExpressionPtr Parser::comparisonExpression() {
   auto left = additionExpression();
   ComparisonExpressionPtr cmp;
 
-  while (match(TokenType::GREATER) || match(TokenType::GREATER_EQUAL) ||
-         match(TokenType::LESS_EQUAL) || match(TokenType::LESS)) {
+  while (match(TokenType::GREATER) || match(TokenType::GREATER_EQUAL)
+  || match(TokenType::LESS_EQUAL) || match(TokenType::LESS)) {
     auto& root_token = tokens_[current_];
     forward();
     auto right = additionExpression();

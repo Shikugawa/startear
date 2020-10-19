@@ -62,6 +62,10 @@ std::string opcodeToString(OPCode op) {
       return "OP_LESS";
     case OPCode::OP_GREATER:
       return "OP_GREATER";
+    case OPCode::OP_AND:
+      return "OP_AND";
+    case OPCode::OP_OR:
+      return "OP_OR";
     default:
       return "";
   }
@@ -87,6 +91,8 @@ bool validOperandSize(OPCode code, size_t operand_size) {
     case OPCode::OP_LESS_EQUAL:
     case OPCode::OP_GREATER_EQUAL:
     case OPCode::OP_LESS:
+    case OPCode::OP_OR:
+    case OPCode::OP_AND:
     case OPCode::OP_GREATER:
     case OPCode::OP_RETURN:
       return expect_size(0);

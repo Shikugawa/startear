@@ -224,6 +224,82 @@ void EqualityExpression::self(Program& program) {
   }
 }
 
+void AndLogicExpression::self(Program& program) {
+  if (eql_left_expr_ != nullptr && eql_right_expr_ != nullptr) {
+    static_cast<ASTNode*>(eql_left_expr_.get())->self(program);
+    static_cast<ASTNode*>(eql_right_expr_.get())->self(program);
+  } else if (eql_left_expr_ != nullptr && and_logic_right_expr_ != nullptr) {
+    static_cast<ASTNode*>(eql_left_expr_.get())->self(program);
+    static_cast<ASTNode*>(and_logic_right_expr_.get())->self(program);
+  } else if (eql_left_expr_ != nullptr) {
+    static_cast<ASTNode*>(eql_left_expr_.get())->self(program);
+  } else {
+    NOT_REACHED;
+  }
+  if (token_ != nullptr) {
+    program.addInst(OPCode::OP_AND);
+  }
+}
+
+std::string AndLogicExpression::toString() {
+  if (token_ != nullptr && and_logic_right_expr_ != nullptr) {
+    STARTEAR_ASSERT(eql_left_expr_ != nullptr);
+    return fmt::format("({} {} {})", token_->lexeme(), eql_left_expr_->toString(),
+                       and_logic_right_expr_->toString());
+  }
+  if (token_ != nullptr && eql_right_expr_ != nullptr) {
+    STARTEAR_ASSERT(eql_left_expr_ != nullptr);
+    return fmt::format("({} {} {})", token_->lexeme(), eql_left_expr_->toString(),
+                       eql_right_expr_->toString());
+  }
+  if (eql_left_expr_ != nullptr) {
+    return eql_left_expr_->toString();
+  }
+  NOT_REACHED;
+}
+
+void AndLogicExpression::accept(IASTNodeVisitor& visitor) {
+  visitor.visit(*this);
+}
+
+void OrLogicExpression::self(Program& program) {
+  if (and_logic_left_expr_ != nullptr && and_logic_right_expr_ != nullptr) {
+    static_cast<ASTNode*>(and_logic_left_expr_.get())->self(program);
+    static_cast<ASTNode*>(and_logic_right_expr_.get())->self(program);
+  } else if (and_logic_left_expr_ != nullptr && or_logic_expr_ != nullptr) {
+    static_cast<ASTNode*>(and_logic_left_expr_.get())->self(program);
+    static_cast<ASTNode*>(or_logic_expr_.get())->self(program);
+  } else if (and_logic_left_expr_ != nullptr) {
+    static_cast<ASTNode*>(and_logic_left_expr_.get())->self(program);
+  } else {
+    NOT_REACHED;
+  }
+  if (token_ != nullptr) {
+    program.addInst(OPCode::OP_AND);
+  }
+}
+
+std::string OrLogicExpression::toString() {
+  if (token_ != nullptr && or_logic_expr_ != nullptr) {
+    STARTEAR_ASSERT(and_logic_left_expr_ != nullptr);
+    return fmt::format("({} {} {})", token_->lexeme(), and_logic_left_expr_->toString(),
+                       or_logic_expr_->toString());
+  }
+  if (token_ != nullptr && and_logic_right_expr_ != nullptr) {
+    STARTEAR_ASSERT(and_logic_left_expr_ != nullptr);
+    return fmt::format("({} {} {})", token_->lexeme(), and_logic_left_expr_->toString(),
+                       and_logic_right_expr_->toString());
+  }
+  if (and_logic_left_expr_ != nullptr) {
+    return and_logic_left_expr_->toString();
+  }
+  NOT_REACHED;
+}
+
+void OrLogicExpression::accept(IASTNodeVisitor& visitor) {
+  visitor.visit(*this);
+}
+
 std::string BasicExpression::toString() { return expr_->toString(); }
 
 void BasicExpression::accept(IASTNodeVisitor& visitor) { visitor.visit(*this); }
@@ -348,9 +424,10 @@ void IfStatement::self(Program& program) {
   static_cast<ASTNode*>(eql_expr_.get())->self(program);
   std::string label_if_entry = program.getIndexedLabel();
   std::string label_not_if_entry = program.getIndexedLabel();
-  program.addInst(OPCode::OP_BRANCH, {
-    std::make_pair(Value::Category::Literal, label_if_entry),
-    std::make_pair(Value::Category::Literal, label_not_if_entry)});
+  program.addInst(
+      OPCode::OP_BRANCH,
+      {std::make_pair(Value::Category::Literal, label_if_entry),
+       std::make_pair(Value::Category::Literal, label_not_if_entry)});
   for (auto i = 0; i < statements_.size(); ++i) {
     if (i == 0) {
       program.addLabel(label_if_entry);

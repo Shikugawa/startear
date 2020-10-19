@@ -95,6 +95,16 @@ void Tokenizer::scanToken() {
     case '/':
       parseSlash();
       break;
+    case '|':
+      if (nextMatch('|')) {
+        addToken(Equality(TokenType::BAR_BAR, "||", current_lineno_));
+        break;
+      }
+    case '&':
+      if (nextMatch('&')) {
+        addToken(Equality(TokenType::AND_AND, "&&", current_lineno_));
+        break;
+      }
     case 'l':
       if (parseReservedWord(TokenType::VAR)) break;
     case 'f':
