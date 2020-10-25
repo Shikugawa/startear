@@ -393,6 +393,7 @@ fn main() {
   let q = 3 < 2;
   let r = 3 == 3;
   let s = 3 != 3;
+  let u = 3 == 2;
   let t = 3 == 3 || 3 == 2;
 }
 )";
@@ -412,6 +413,9 @@ fn main() {
         const auto& entry_s = top_frame.lv_table_.find("s");
         ASSERT_TRUE(entry_s != top_frame.lv_table_.end());
         ASSERT_EQ(entry_s->second.getDouble().value(), 0.0);
+        const auto& entry_u = top_frame.lv_table_.find("u");
+        ASSERT_TRUE(entry_u != top_frame.lv_table_.end());
+        ASSERT_EQ(entry_u->second.getDouble().value(), 0.0);
         const auto& entry_t = top_frame.lv_table_.find("t");
         ASSERT_TRUE(entry_t != top_frame.lv_table_.end());
         ASSERT_EQ(entry_t->second.getDouble().value(), 1.0);

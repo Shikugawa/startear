@@ -5,8 +5,6 @@ project(startear_library CXX)
 include_directories(/usr/local/include)
 link_directories(/usr/local/lib)
 
-find_package(absl REQUIRED)
-
 # library
 add_library(startear_opcode STATIC opcode.h opcode.cpp)
 
@@ -25,7 +23,7 @@ target_link_directories(startear_parser PRIVATE startear_ast startear_tokenizer)
 add_library(startear_program STATIC program.h program.cpp opcode.cpp)
 include_directories(${absl_INCLUDE_DIRS})
 target_include_directories(startear_program INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_directories(startear_program PRIVATE startear_opcode startear_ast startear_tokenizer ${absl_LIBRARIES})
+target_link_directories(startear_program PRIVATE startear_opcode startear_ast startear_tokenizer)
 
 add_library(startear_vm STATIC vm_impl.h vm_impl.cpp opcode.cpp)
 target_include_directories(startear_vm INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})

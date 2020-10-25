@@ -275,7 +275,7 @@ void OrLogicExpression::self(Program& program) {
     NOT_REACHED;
   }
   if (token_ != nullptr) {
-    program.addInst(OPCode::OP_AND);
+    program.addInst(OPCode::OP_OR);
   }
 }
 

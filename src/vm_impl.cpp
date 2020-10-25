@@ -150,10 +150,10 @@ void VMImpl::start() {
           TERMINATE_VM;
         }
         if (opcode == OPCode::OP_OR || opcode == OPCode::OP_AND) {
-          if (*lhs.getDouble() != 0 || *lhs.getDouble() != 1) {
+          if (*lhs.getDouble() != 0 && *lhs.getDouble() != 1) {
             TERMINATE_VM;
           }
-          if (*rhs.getDouble() != 0 || *rhs.getDouble() != 1) {
+          if (*rhs.getDouble() != 0 && *rhs.getDouble() != 1) {
             TERMINATE_VM;
           }
         }
@@ -331,6 +331,10 @@ bool VMImpl::cmp(OPCode code, double lhs, double rhs) {
       return lhs < rhs;
     case OPCode::OP_EQUAL:
       return lhs == rhs;
+    case OPCode::OP_OR:
+      return lhs || rhs;
+    case OPCode::OP_AND:
+      return lhs && rhs;
     default:
       NOT_REACHED;
   }
